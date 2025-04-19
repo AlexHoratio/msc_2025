@@ -13,7 +13,26 @@ source("taxprofiler_utils.r")
 ```
 
 
-```{r}
+```{r get_abundances}
+
+bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken") %>%
+  remove_absent_taxa()
+
+centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger") %>%
+  remove_absent_taxa()
+
+```
+
+```{r get_alpha_diversity}
+
+alpha_diversity <- rbind(
+  get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken")),
+  get_alpha_diversity_from_reports(centrifuger_abundances) %>% add_column(profiler=c("Centrifuger"))
+)
+
+```
+
+```{r compare_alpha_diversity_between_profilers}
 
 
 
