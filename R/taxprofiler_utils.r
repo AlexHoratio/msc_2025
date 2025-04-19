@@ -131,7 +131,7 @@ get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S") {
 
 # Same as above, but getting abundances instead of reads
 get_centrifuge_taxids_and_abundances <- function(folder_path, taxrank="species") {
-  filenames <- Sys.glob(paste0(folder_path, "/*.results.txt")) # my script on SCW saves the re-estimated reports from Centrifuger as *.results.txt... sorry!
+  filenames <- Sys.glob(paste0(folder_path, "/*.txt"))
   
   all_reports <- tibble()
   

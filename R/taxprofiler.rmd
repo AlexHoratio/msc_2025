@@ -25,14 +25,24 @@ centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler
 
 ```{r get_alpha_diversity}
 
+# Data in "long" format
 alpha_diversity <- rbind(
   get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken")),
   get_alpha_diversity_from_reports(centrifuger_abundances) %>% add_column(profiler=c("Centrifuger"))
 )
 
+alpha_diversity$SampleName <- gsub("Abundance \\(", "", alpha_diversity$SampleName)
+alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
+
 ```
 
 ```{r compare_alpha_diversity_between_profilers}
+
+shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
+  geom_boxplot()
+
+shannon_compare
+ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
 
 
