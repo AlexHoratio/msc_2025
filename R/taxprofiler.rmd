@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+library("ggVennDiagram")
+library("eulerr")
 source("taxprofiler_utils.r")
 
 ```
@@ -36,7 +38,16 @@ alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
 
 ```
 
-```{r compare_alpha_diversity_between_profilers}
+
+```{r compare_richness_between_profilers}
+
+colnames(bracken_abundances)[1] <- "taxID"
+centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
+
+all_abundances <- full_join(
+  bracken_abundances %>% add_column(profiler=c("Bracken")),
+  centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
+  by = "taxID")
 
 shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
   geom_boxplot()
@@ -44,6 +55,37 @@ shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) +
 shannon_compare
 ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
+
+```
+
+```{r venn_overlap_of_taxids}
+
+
+
+profiler_taxids <- list(
+  Bracken = filter(all_abundances, !is.na(all_abundances$profiler.x)) %>% pull(taxID),
+  Centrifuger = filter(all_abundances, !is.na(all_abundances$profiler.y)) %>% pull(taxID)
+)
+
+ggVennDiagram(profiler_taxids) + 
+  coord_flip()
+
+plot(euler(profiler_taxids), 
+     fills = list(fill = c("A" = "#54928D", "B" = "#941C50"), alpha = 0.9),
+     labels = list(col = "black", font = 2),
+     quantities = list(col = "black", font = 2))
+
+
+```
+
+
+```{r compare_alpha_diversity_between_profilers}
+
+shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
+  geom_boxplot()
+
+shannon_compare
+ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
 
 ```
