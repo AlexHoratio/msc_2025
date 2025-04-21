@@ -10,17 +10,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library("ggVennDiagram")
 library("eulerr")
+library("taxonomizr")
+library("ggtext")
+
 source("taxprofiler_utils.r")
+
+```
+
+```{r prepare_taxonomizr_db}
+
+# This can take a while, and crashes my pc sometimes... be warned!!
+prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = FALSE)
 
 ```
 
 
 ```{r get_abundances}
 
-bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken") %>%
+bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
-centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger") %>%
+centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "phylum", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
 ```
@@ -49,12 +59,138 @@ all_abundances <- full_join(
   centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
   by = "taxID")
 
+shared_abundances <- inner_join(
+  bracken_abundances %>% add_column(profiler=c("Bracken")),
+  centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
+  by = "taxID"
+)
+
 shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
   geom_boxplot()
 
 shannon_compare
 ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
+
+```
+
+```{r compare_phyla}
+
+taxonomy <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+  data.frame() %>%
+  add_column(taxID=all_abundances$taxID)
+
+taxonomy$domain[is.na(taxonomy$domain)] <- "Viruses, etc."
+
+phyla_taxids <- taxonomy[, c(2, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_phyla <- inner_join(all_abundances, phyla_taxids, by="taxID")
+all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
+
+phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11)], sum, na.rm = TRUE)
+
+centrifuger_phyla_proportions <- phyla_proportions[,c(1, 6:9)]
+colnames(centrifuger_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+
+bracken_phyla_proportions <- phyla_proportions[,c(1:5)]
+colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+
+phyla_proportions <- rbind(
+  bracken_phyla_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_phyla_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007")) 
+
+remainder <- aggregate(. ~ profiler+name, phyla_proportions[phyla_proportions$value <= 0.02,][, -c(1)], sum) %>%
+  add_column(phylum=c("<2% Phyla"))
+
+phyla_proportions <- phyla_proportions %>%
+  filter(value > c(0.02)) %>%
+  rbind(remainder)
+
+compare_phyla <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(fill = "Phylum") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_brewer(palette = "Set3") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+compare_phyla
+ggsave("graphs/taxprofiler/compare_phyla.png", compare_phyla, width = 2187, height = 800, units="px")
+
+```
+
+
+```{r compare_domains}
+
+domains <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+  data.frame() %>%
+  add_column(taxID=all_abundances$taxID)
+
+domains$domain[is.na(domains$domain)] <- "Other"
+
+domains <- domains[, c(1, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_domains <- inner_join(all_abundances, domains, by="taxID")
+all_abundances_with_domains[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_domains[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
+
+domain_proportions <- aggregate(. ~ domain, all_abundances_with_domains[, -c(1, 6, 11)], sum, na.rm = TRUE)
+
+centrifuger_domain_proportions <- domain_proportions[,c(1, 6:9)]
+colnames(centrifuger_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007")
+
+bracken_domain_proportions <- domain_proportions[,c(1:5)]
+colnames(bracken_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007")
+
+domain_proportions <- rbind(
+  bracken_domain_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_domain_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007")) 
+
+compare_domains <- ggplot(domain_proportions, aes(x=name, y=value, fill=domain)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(fill = "Domain")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+compare_domains
+ggsave("graphs/taxprofiler/compare_domains.png", compare_domains)
 
 ```
 
@@ -72,8 +208,9 @@ ggVennDiagram(profiler_taxids) +
 
 plot(euler(profiler_taxids), 
      fills = list(fill = c("A" = "#54928D", "B" = "#941C50"), alpha = 0.9),
-     labels = list(col = "black", font = 2),
-     quantities = list(col = "black", font = 2))
+     labels = list(col = "black", font = 2, cex = 2.5),
+     quantities = list(col = "black", font = 2, cex = 1.8))
+
 
 
 ```

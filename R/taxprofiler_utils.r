@@ -87,7 +87,7 @@ get_centrifuge_taxids_and_reads <- function(folder_path, taxrank="species", uniq
 }
 
 # Same as above, but getting abundances instead of reads 
-get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S") {
+get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S", all_taxa=FALSE) {
   filenames <- Sys.glob(paste0(folder_path, "/*.txt"))
   
   all_reports <- tibble()
@@ -103,7 +103,11 @@ get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S") {
                                    "Fraction of Total Reads"
     )
     
-    filtered_file <- filter(bracken_report_file, `Taxonomic Rank` == taxrank)
+    if (!all_taxa) {
+      filtered_file <- filter(bracken_report_file, `Taxonomic Rank` == taxrank)
+    } else {
+      filtered_file <- bracken_report_file
+    }
     
     if (nrow(all_reports) != 0L) {
       subset_file <- filtered_file[, c("Fraction of Total Reads", "NCBI TaxID")]
@@ -130,7 +134,7 @@ get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S") {
 }
 
 # Same as above, but getting abundances instead of reads
-get_centrifuge_taxids_and_abundances <- function(folder_path, taxrank="species") {
+get_centrifuge_taxids_and_abundances <- function(folder_path, taxrank="species", all_taxa=FALSE) {
   filenames <- Sys.glob(paste0(folder_path, "/*.txt"))
   
   all_reports <- tibble()
@@ -138,7 +142,11 @@ get_centrifuge_taxids_and_abundances <- function(folder_path, taxrank="species")
   for (f in filenames) {
     centrifuge_report_file <- readr::read_delim(f, col_names=TRUE)
     
-    filtered_file <- filter(centrifuge_report_file, `taxRank` == taxrank)
+    if (!all_taxa) {
+      filtered_file <- filter(centrifuge_report_file, `taxRank` == taxrank)
+    } else {
+      filtered_file <- centrifuge_report_file
+    }
     
     if (nrow(all_reports) != 0L) {
       subset_file <- filtered_file[, c("abundance", "taxID")]
