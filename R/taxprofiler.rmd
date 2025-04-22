@@ -209,7 +209,7 @@ ggVennDiagram(profiler_taxids) +
   coord_flip()
 
 plot(euler(profiler_taxids), 
-     fills = list(fill = c("A" = "#54928D", "B" = "#941C50"), alpha = 0.9),
+     fills = list(fill = c("B" = "#941C50", "A" = "#54928D"), alpha = 0.9),
      labels = list(col = "black", font = 2, cex = 2.5),
      quantities = list(col = "black", font = 2, cex = 1.8))
 
@@ -234,10 +234,12 @@ shannon_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = Shannon, fi
   geom_bar(stat = "identity", position = position_dodge(), show.legend = TRUE) + 
   xlab("") + 
   ylab("Shannon Diversity") + 
+  scale_fill_manual(values = c("#8488B4", "#D08D3C")) +
   theme_classic() + 
   theme(
     axis.text.x = element_markdown(face="bold", size = 20),
     axis.text.y = element_markdown(size = 12),
+    axis.title.y = element_markdown(face="bold"),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef'),
@@ -256,10 +258,12 @@ isimpson_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = InverseSim
   geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) + 
   xlab("") + 
   ylab("Inverse Simpson Diversity") + 
+  scale_fill_manual(values = c("#8488B4", "#D08D3C")) +
   theme_classic() + 
   theme(
     axis.text.x = element_markdown(face="bold", size = 20),
     axis.text.y = element_markdown(size = 12),
+    axis.title.y = element_markdown(face="bold"),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef'),
