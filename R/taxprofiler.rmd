@@ -30,7 +30,7 @@ prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), prot
 bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
-centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "phylum", all_taxa=FALSE) %>%
+centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
 ```
@@ -43,8 +43,10 @@ alpha_diversity <- rbind(
   get_alpha_diversity_from_reports(centrifuger_abundances) %>% add_column(profiler=c("Centrifuger"))
 )
 
-alpha_diversity$SampleName <- gsub("Abundance \\(", "", alpha_diversity$SampleName)
+alpha_diversity$SampleName <- gsub("Abundance \\(RAMAN_", "", alpha_diversity$SampleName)
 alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
+
+
 
 ```
 
@@ -224,5 +226,50 @@ shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) +
 shannon_compare
 ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
+```
 
+```{r alpha_diversity_by_sample}
+
+shannon_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = Shannon, fill = profiler)) + 
+  geom_bar(stat = "identity", position = position_dodge(), show.legend = TRUE) + 
+  xlab("") + 
+  ylab("Shannon Diversity") + 
+  theme_classic() + 
+  theme(
+    axis.text.x = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 15, face = "bold"),
+    legend.title = element_blank(),
+    legend.position = "top",
+  )
+
+ggsave("graphs/taxprofiler/shannon_diversity.png", shannon_diversity, width = 1200, height = 900, units = "px")
+shannon_diversity
+
+
+isimpson_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = InverseSimpson, fill = profiler)) + 
+  geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) + 
+  xlab("") + 
+  ylab("Inverse Simpson Diversity") + 
+  theme_classic() + 
+  theme(
+    axis.text.x = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12, face = "bold"),
+    legend.title = element_blank(),
+    legend.position = "top",
+  )
+
+ggsave("graphs/taxprofiler/isimpson_diversity.png", isimpson_diversity, width = 1200, height = 900, units = "px")
+isimpson_diversity
 ```

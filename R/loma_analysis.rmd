@@ -1,0 +1,54 @@
+---
+title: "LOMA Analysis"
+author: "Alex Caswell"
+date: "2025-04-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r imports}
+
+source("get_stats_from_readqc.r")
+
+```
+
+# What's the plan?!
+
+We need...
+
+-   Read statistics for every input file (*b.p., n50, \# reads, filesize*)
+-   Assembly information
+    -   \# of contigs
+    -   \# of bins
+-   *Diversity information*
+    -   Shannon/Inv. Simpson
+
+```{r read_statistics}
+
+read_statistics <- get_tsv_from_run_folder("RUN01")
+
+
+```
+
+```{r make_graphs}
+
+
+filtered_read_statistics <- read_statistics[read_statistics$bin_count != 0,]
+
+make_ggplot_scatterplot(read_statistics, read_statistics$total_bases_mbp, read_statistics$bin_count) + 
+  geom_point(aes(color = read_statistics$bin_count == 0)) + 
+  xlab("Total Bases (mbp)") + 
+  ylab("Number of bins")
+
+make_ggplot_scatterplot(filtered_read_statistics, filtered_read_statistics$read_n50, filtered_read_statistics$average_bin_n50) + 
+  geom_point(aes(color = "red")) + 
+  #geom_smooth(method = "lm", alpha = 0.1) +
+  xlab("Input Read N50") + 
+  ylab("Average Bin N50")
+
+
+
+```
