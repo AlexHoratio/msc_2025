@@ -1,0 +1,24 @@
+---
+title: "BUSCO"
+author: "Alex Caswell"
+date: "2025-04-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+busco_r003 <- read_tsv("data/busco_tsv/RAMAN_R003.tsv")
+busco_r004 <- read_tsv("data/busco_tsv/RAMAN_R004.tsv")
+busco_r005 <- read_tsv("data/busco_tsv/RAMAN_R005.tsv")
+busco_r007 <- read_tsv("data/busco_tsv/RAMAN_R007.tsv")
+
+busco_all <- rbind(
+  busco_r003,
+  busco_r004,
+  busco_r005,
+  busco_r007
+)
+
+```
+
+
