@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r imports}
 
 source("get_stats_from_readqc.r")
+library(ggtext)
 
 ```
 
@@ -50,5 +51,53 @@ make_ggplot_scatterplot(filtered_read_statistics, filtered_read_statistics$read_
   ylab("Average Bin N50")
 
 
+```
+
+```{r compare_bin_count_to_x}
+
+
+ggplot(read_statistics, aes(x = total_bases_mbp, y = bin_count)) + 
+  geom_point()
+
+ggplot(read_statistics, aes(x = number_of_reads, y = bin_count)) + 
+  geom_point()
+
+ggplot(read_statistics, aes(x = read_n50, y = bin_count)) + 
+  geom_point()
+
+ggplot(read_statistics, aes(x = mean_read_length, y = bin_count)) + 
+  geom_point()
+
+```
+
+
+```{r number_of_bins}
+
+
+number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, fill = run_accession)) + 
+  geom_bar(stat="identity") +
+  geom_text(label = read_statistics$bin_count, size = 10, vjust = -0.2) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007")) +
+  ylab("\\# of MAGs") +
+  xlab("") +
+  expand_limits(y = c(0, 300)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+number_of_bins
+ggsave("graphs/loma/number_of_bins.png", number_of_bins)
 
 ```

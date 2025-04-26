@@ -35,13 +35,14 @@ completeness <- ggplot(busco_all, aes(x = `Complete`, fill=SampleName)) +
   scale_x_continuous(breaks = seq(0, 100, 10)) +
   scale_y_continuous(breaks = seq(0, 150, 20)) + 
   scale_fill_brewer(palette = "Set1") + 
-  ylab("") +
+  ylab("\\# of MAGs") +
   xlab("Completeness (%)") +
   theme_classic() +
   theme(
     axis.text.y = element_markdown(size = 16),
     axis.text.x = element_markdown(size = 20),
     axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef'),
@@ -52,6 +53,7 @@ completeness <- ggplot(busco_all, aes(x = `Complete`, fill=SampleName)) +
   )
 
 completeness
+ggsave("graphs/busco/mag_busco_completeness_histogram.png", completeness)
 
 ```
 
@@ -79,6 +81,7 @@ boxplot_completeness <- ggplot(busco_all, aes(x = `SampleName`, y=Complete, fill
   )
 
 boxplot_completeness
+ggsave("graphs/busco/mag_busco_completeness_boxplot.png", boxplot_completeness)
 
 ```
 
