@@ -28,6 +28,11 @@ busco_all <- rbind(
 
 ```
 
+A few are missing!!! I need to re-run BUSCO on these!!
+
+r003: 67, 74, 89
+r004: 93
+
 ```{r histogram_of_completeness}
 
 completeness <- ggplot(busco_all, aes(x = `Complete`, fill=SampleName)) +
@@ -85,14 +90,5 @@ ggsave("graphs/busco/mag_busco_completeness_boxplot.png", boxplot_completeness)
 
 ```
 
-
-```{r gtdb}
-
-gtdb_r003_bac120 <- read_tsv("data/gtdbtk/RAMAN_R003/gtdbtk.bac120.summary.tsv")
-gtdb_r004_bac120 <- read_tsv("data/gtdbtk/RAMAN_R004/gtdbtk.bac120.summary.tsv")
-gtdb_r005_bac120 <- read_tsv("data/gtdbtk/RAMAN_R005/gtdbtk.bac120.summary.tsv")
-gtdb_r007_bac120 <- read_tsv("data/gtdbtk/RAMAN_R007/gtdbtk.bac120.summary.tsv")
-
-```
 
 

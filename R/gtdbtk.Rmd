@@ -1,0 +1,89 @@
+---
+title: "GTDB-tk"
+author: "Alex Caswell"
+date: "2025-04-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+library(ggtext)
+
+```
+
+```{r get_files}
+
+r003_bac120 <- read_tsv("data/gtdbtk/RAMAN_R003/gtdbtk.bac120.summary.tsv")
+r004_bac120 <- read_tsv("data/gtdbtk/RAMAN_R004/gtdbtk.bac120.summary.tsv")
+r004_ar53 <- read_tsv("data/gtdbtk/RAMAN_R004/gtdbtk.ar53.summary.tsv")
+r005_bac120 <- read_tsv("data/gtdbtk/RAMAN_R005/gtdbtk.bac120.summary.tsv")
+r005_ar53 <- read_tsv("data/gtdbtk/RAMAN_R005/gtdbtk.ar53.summary.tsv")
+r007_bac120 <- read_tsv("data/gtdbtk/RAMAN_R007/gtdbtk.bac120.summary.tsv")
+r007_ar53 <- read_tsv("data/gtdbtk/RAMAN_R007/gtdbtk.ar53.summary.tsv")
+
+all_gtdb <- rbind(
+    r003_bac120,
+    r004_bac120,
+    r004_ar53,
+    r005_bac120,
+    r005_ar53,
+    r007_bac120,
+    r007_ar53
+  ) %>% 
+  filter(!grepl("unbinned", user_genome)) %>%
+  mutate(SampleName=str_extract(user_genome, "[R]+[0-9]+")) %>%
+  mutate(Bin=str_extract(user_genome, "(?<=_000)[0-9]+")) %>%
+  subset(select = -c(1))
+  
+
+```
+
+
+```{r filter_all_by_busco}
+
+# Run busco.Rmd first!!
+
+busco_gtdb <- left_join(all_gtdb, busco_all, by=c("SampleName"="SampleName", "Bin"="Bin")) %>%
+  filter(Complete > 50)
+
+```
+
+```{r get_phylum}
+
+busco_gtdb <- busco_gtdb %>%
+  mutate(Phylum = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 2), c("a_A"="a", "a_B"="a", "_C"="", "_I"="", "p__"="")))
+
+```
+
+```{r plot_phyla}
+
+mag_phyla <- ggplot(busco_gtdb, aes(x = 1, fill = Phylum)) + 
+  geom_bar(position="fill") + 
+  coord_polar(theta="y") + 
+  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#FDB462", "#B3DE69", "#D9D9D9")) +
+  xlab("") +
+  ylab("") +
+  facet_grid(~ SampleName) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.ticks = element_blank(),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.margin = margin(b = 20)
+  )
+
+ggsave("graphs/gtdbtk/mag_phyla.png", mag_phyla)
+mag_phyla
+
+```
