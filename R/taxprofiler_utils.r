@@ -87,8 +87,8 @@ get_centrifuge_taxids_and_reads <- function(folder_path, taxrank="species", uniq
 }
 
 # Same as above, but getting abundances instead of reads 
-get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S", all_taxa=FALSE) {
-  filenames <- Sys.glob(paste0(folder_path, "/*.txt"))
+get_bracken_taxids_and_abundances <- function(folder_path, taxrank="S", all_taxa=FALSE, tsv=FALSE) {
+  filenames <- Sys.glob(paste0(folder_path, (if (tsv) "/*.tsv" else "/*.txt")))
   
   all_reports <- tibble()
   
@@ -161,6 +161,46 @@ get_centrifuge_taxids_and_abundances <- function(folder_path, taxrank="species",
       
     } else {
       all_reports <- filtered_file[, c("taxID", "abundance")]
+      names(all_reports) <- c("taxID", 
+                              sprintf("Abundance (%s)", 
+                                      str_extract(f, "R[A-Za-z0-9]+[_][A-Za-z0-9]+")
+                              )
+      )
+    }
+  }
+  return(all_reports)
+}
+
+get_kreport_taxids_and_abundances <- function(folder_path, taxrank="S", all_taxa=FALSE) {
+  filenames <- Sys.glob(paste0(folder_path, "/*.txt"))
+  
+  all_reports <- tibble()
+  
+  for (f in filenames) {
+    kreport_file <- readr::read_delim(f, col_names=TRUE)
+    
+    if (!all_taxa) {
+      filtered_file <- filter(kreport_file, kreport_file[c(4)] == taxrank)
+    } else {
+      filtered_file <- kreport_file
+    }
+    
+    if (nrow(all_reports) != 0L) {
+      subset_file <- filtered_file[, c(1, 5)]
+      subset_file[, c(1)] = as.numeric(unlist(subset_file[, c(1)], use.names=FALSE)) / 100.0
+      
+      # Using regex to extract names of Raman samples (i.e., RAMAN_R003)
+      names(subset_file) <- c(sprintf("Abundance (%s)", 
+                                      str_extract(f, "R[A-Za-z0-9]+[_][A-Za-z0-9]+")), 
+                              "taxID"
+      )
+      
+      all_reports <- full_join(all_reports, subset_file, by="taxID")
+      
+    } else {
+      all_reports <- filtered_file[, c(5, 1)]
+      all_reports[, c(2)] = as.numeric(unlist(all_reports[, c(2)], use.names=FALSE)) / 100.0
+      
       names(all_reports) <- c("taxID", 
                               sprintf("Abundance (%s)", 
                                       str_extract(f, "R[A-Za-z0-9]+[_][A-Za-z0-9]+")

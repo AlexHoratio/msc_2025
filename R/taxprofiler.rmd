@@ -27,10 +27,13 @@ prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), prot
 
 ```{r get_abundances}
 
-bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken", all_taxa=FALSE) %>%
+bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken_loma", all_taxa=FALSE, tsv=TRUE) %>%
   remove_absent_taxa()
 
 centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
+  remove_absent_taxa()
+
+cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/raman/centrifuger_loma", taxrank="S", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
 ```
@@ -40,7 +43,7 @@ centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler
 # Data in "long" format
 alpha_diversity <- rbind(
   get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken")),
-  get_alpha_diversity_from_reports(centrifuger_abundances) %>% add_column(profiler=c("Centrifuger"))
+  get_alpha_diversity_from_reports(cfgr_kreport_abundances) %>% add_column(profiler=c("Centrifuger"))
 )
 
 alpha_diversity$SampleName <- gsub("Abundance \\(RAMAN_", "", alpha_diversity$SampleName)
@@ -55,17 +58,17 @@ alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
 
 colnames(bracken_abundances)[1] <- "taxID"
 centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
+cfgr_kreport_abundances$taxID <- as.character(cfgr_kreport_abundances$taxID)
 
 all_abundances <- full_join(
   bracken_abundances %>% add_column(profiler=c("Bracken")),
-  centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
-  by = "taxID")
+  cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger")),
+  by = "taxID")# %>% full_join(cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger_NT")), by="taxID")
 
 shared_abundances <- inner_join(
   bracken_abundances %>% add_column(profiler=c("Bracken")),
   centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
-  by = "taxID"
-)
+  by = "taxID") %>% full_join(cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger_NT")), by="taxID")
 
 shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
   geom_boxplot()
@@ -91,17 +94,17 @@ phyla_taxids <- taxonomy[, c(2, 8)]
 all_abundances_with_phyla <- inner_join(all_abundances, phyla_taxids, by="taxID")
 all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
 
-phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11)], sum, na.rm = TRUE)
-
-centrifuger_phyla_proportions <- phyla_proportions[,c(1, 6:9)]
-colnames(centrifuger_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11, 16)], sum, na.rm = TRUE)
 
 bracken_phyla_proportions <- phyla_proportions[,c(1:5)]
 colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
 
+centrifuger_phyla_proportions <- phyla_proportions[,c(1, 6:9)]
+colnames(centrifuger_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+
 phyla_proportions <- rbind(
   bracken_phyla_proportions %>% add_column(profiler=c("Bracken")),
-  centrifuger_phyla_proportions %>% add_column(profiler=c("Centrifuger"))
+  cfgr_kreport_phyla_proportions %>% add_column(profiler=c("Centrifuger"))
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007")) 
 
@@ -210,7 +213,7 @@ ggVennDiagram(profiler_taxids) +
 
 plot(euler(profiler_taxids), 
      fills = list(fill = c("B" = "#941C50", "A" = "#54928D"), alpha = 0.9),
-     labels = list(col = "black", font = 2, cex = 2.5),
+     labels = list(col = "#00000000", font = 2, cex = 2.5),
      quantities = list(col = "black", font = 2, cex = 1.8))
 
 

@@ -61,7 +61,7 @@ busco_gtdb <- busco_gtdb %>%
 mag_phyla <- ggplot(busco_gtdb, aes(x = 1, fill = Phylum)) + 
   geom_bar(position="fill") + 
   coord_polar(theta="y") + 
-  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#FDB462", "#B3DE69", "#D9D9D9")) +
+  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090", "#FDB462", "#FCCDE5")) +
   xlab("") +
   ylab("") +
   facet_grid(~ SampleName) +
