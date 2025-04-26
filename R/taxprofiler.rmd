@@ -94,7 +94,7 @@ phyla_taxids <- taxonomy[, c(2, 8)]
 all_abundances_with_phyla <- inner_join(all_abundances, phyla_taxids, by="taxID")
 all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
 
-phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11, 16)], sum, na.rm = TRUE)
+phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11)], sum, na.rm = TRUE)
 
 bracken_phyla_proportions <- phyla_proportions[,c(1:5)]
 colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
