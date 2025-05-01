@@ -2,7 +2,9 @@
 title: "GTDB-tk"
 author: "Alex Caswell"
 date: "2025-04-26"
-output: html_document
+output: 
+  html_document:
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
@@ -13,6 +15,7 @@ library(ggtext)
 ```
 
 ```{r get_files}
+#| collapse = TRUE
 
 r003_bac120 <- read_tsv("data/gtdbtk/RAMAN_R003/gtdbtk.bac120.summary.tsv")
 r004_bac120 <- read_tsv("data/gtdbtk/RAMAN_R004/gtdbtk.bac120.summary.tsv")
@@ -38,7 +41,6 @@ all_gtdb <- rbind(
   
 
 ```
-
 
 ```{r filter_all_by_busco}
 
