@@ -47,7 +47,7 @@ all_gtdb <- rbind(
 # Run busco.Rmd first!!
 
 busco_gtdb <- left_join(all_gtdb, busco_all, by=c("SampleName"="SampleName", "Bin"="Bin")) %>%
-  filter(Complete > 50)
+  filter(Complete >= 0)
 
 ```
 

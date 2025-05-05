@@ -13,6 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 source("get_stats_from_readqc.r")
 library(ggtext)
+library(sitools)
+library(cowplot)
+library(ggExtra)
 
 ```
 
@@ -29,9 +32,93 @@ We need...
 
 ```{r read_statistics}
 
-read_statistics <- get_tsv_from_run_folder("RUN01")
+read_statistics <- get_tsv_from_run_folder("RUN01/RUN01/")
 
 
+```
+
+```{r histogram_of_n50}
+
+histogram_of_n50 <- ggplot(read_statistics, aes(x=read_n50)) +
+  geom_histogram(binwidth=1000, boundary = 0, closed = "left", col="grey") + 
+  theme_classic() +
+  scale_fill_brewer(palette = "Set1") + 
+  ylab("Count") + 
+  xlab("N50") + 
+  scale_x_continuous(breaks = seq(0, 30000, 2000)) +
+  theme(
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+  )
+
+ggsave("graphs/loma/example/histogram_n50.png", histogram_of_n50, width = 2100, height = 1600, units="px")
+histogram_of_n50
+
+```
+
+```{r histogram_of_number_of_reads}
+
+histogram_of_number_of_reads <- ggplot(read_statistics, aes(x=number_of_reads)) +
+  geom_histogram(binwidth=1000000, boundary = 0, closed = "left", col="grey") + 
+  theme_classic() +
+  scale_fill_brewer(palette = "Set1") + 
+  ylab("") + 
+  xlab("Number of Reads") + 
+  scale_x_continuous(breaks = seq(0, 18000000, 2000000), labels=f2si) +
+  theme(
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+  )
+
+ggsave("graphs/loma/example/histogram_of_number_of_reads.png", histogram_of_number_of_reads, width = 2100, height = 1600, units="px")
+histogram_of_number_of_reads
+
+```
+
+
+```{r histogram_of_total_bases}
+
+histogram_of_total_bases <- ggplot(read_statistics, aes(x=total_bases_mbp)) +
+  geom_histogram(binwidth=2000, boundary = 0, closed = "left", col="grey") + 
+  theme_classic() +
+  scale_fill_brewer(palette = "Set1") + 
+  ylab("Count") + 
+  xlab("Total Bases (Mbp)") + 
+  scale_x_continuous(breaks = seq(0, 60000, 10000), labels=f2si) +
+  theme(
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+  )
+
+ggsave("graphs/loma/example/histogram_of_total_bases.png", histogram_of_total_bases, width = 2100, height = 1600, units="px")
+histogram_of_total_bases
+
+```
+
+```{r make_sequencing_stats_panel}
+
+sequencing_stats_panel <- plot_grid(plot_grid(histogram_of_total_bases, histogram_of_number_of_reads, labels=c("A", "B")), histogram_of_n50, ncol=1, labels=c("", "C"))
+ggsave("graphs/loma/example/sequencing_stats_panel.png", sequencing_stats_panel, height=2100, width=3200, units="px")
+
+```
+
+```{r integrated_sequencing_stats}
+
+integrated_scatter <- ggplot(read_statistics, aes(x=read_n50, y=number_of_reads, size = total_bases_mbp)) +
+  geom_point() + 
+  theme_classic() +
+  scale_x_continuous(breaks = seq(0, 30000, 2000), labels=f2si) +
+  scale_y_continuous(breaks = seq(0, 18000000, 2000000), labels=f2si) +
+  scale_size_continuous(name="Total Bases (Mbp)") +
+  xlab("N50") +
+  ylab("Number of Reads") +
+  theme(
+    legend.position = "left"
+  )
+
+marginal_integrated_scatter <- ggMarginal(integrated_scatter, type="histogram")
+ggsave("graphs/loma/example/marginal_integrated_scatter.png", marginal_integrated_scatter)
+marginal_integrated_scatter
 ```
 
 ```{r make_graphs}
