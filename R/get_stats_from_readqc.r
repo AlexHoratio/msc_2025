@@ -9,15 +9,15 @@ get_list_of_run_accessions <- function() {
   return(run_accessions)
 }
 
-get_read_statistics <- function(run_accessions) {
+get_read_statistics <- function(run_accessions, folder_name) {
   reticulate::source_python(paste0(this.dir(), "/../python/generate_tsv_from_readqc_summaries.py"))
-  generate_tsv_from_readqc_summaries(run_accessions, paste0(this.dir(), "/data/loma/RUN01/"))
+  generate_tsv_from_readqc_summaries(run_accessions, folder_name)
   
 }
 
-get_tsv_from_run_folder <- function(run_name) {
-  setwd(paste0(this.dir(), paste0("/data/loma/", run_name)))
-  read_tsv(get_read_statistics(get_list_of_run_accessions()))
+get_tsv_from_run_folder <- function(folder_name) {
+  setwd(paste0(this.dir(), folder_name))
+  read_tsv(get_read_statistics(get_list_of_run_accessions(), folder_name))
 }
     
 make_ggplot_scatterplot <- function(data, xx, yy) {
