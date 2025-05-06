@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r imports}
 
 source("get_stats_from_readqc.r")
+
 library(ggtext)
 library(sitools)
 library(cowplot)
@@ -32,7 +33,7 @@ We need...
 
 ```{r read_statistics}
 
-read_statistics <- get_tsv_from_run_folder("RUN01/RUN01/")
+read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01/RUN01/")
 
 
 ```
@@ -104,11 +105,37 @@ ggsave("graphs/loma/example/sequencing_stats_panel.png", sequencing_stats_panel,
 
 ```{r integrated_sequencing_stats}
 
+format_si <- function(...) {
+  # Based on code by Ben Tupper
+  # https://stat.ethz.ch/pipermail/r-help/2012-January/299804.html
+
+  function(x) {
+    limits <- c(1e-24, 1e-21, 1e-18, 1e-15, 1e-12,
+                1e-9,  1e-6,  1e-3,  1e0,   1e3,
+                1e6,   1e9,   1e12,  1e15,  1e18,
+                1e21,  1e24)
+    prefix <- c("y",   "z",   "a",   "f",   "p",
+                "n",   "µ",   "m",   " ",   "k",
+                "M",   "G",   "T",   "P",   "E",
+                "Z",   "Y")
+
+    # Vector with array indices according to position in intervals
+    i <- findInterval(abs(x), limits)
+
+    # Set prefix to " " for very small values < 1e-24
+    i <- ifelse(i==0, which(limits == 1e0), i)
+
+    paste(format(round(x/limits[i], 1),
+                 trim=TRUE, scientific=FALSE, ...),
+          prefix[i])
+  }
+}
+
 integrated_scatter <- ggplot(read_statistics, aes(x=read_n50, y=number_of_reads, size = total_bases_mbp)) +
   geom_point() + 
   theme_classic() +
   scale_x_continuous(breaks = seq(0, 30000, 2000), labels=f2si) +
-  scale_y_continuous(breaks = seq(0, 18000000, 2000000), labels=f2si) +
+  scale_y_continuous(breaks = seq(0, 40000000, 4000000), labels=format_si()) +
   scale_size_continuous(name="Total Bases (Mbp)") +
   xlab("N50") +
   ylab("Number of Reads") +

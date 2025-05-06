@@ -11,7 +11,7 @@ get_list_of_run_accessions <- function() {
 
 get_read_statistics <- function(run_accessions, folder_name) {
   reticulate::source_python(paste0(this.dir(), "/../python/generate_tsv_from_readqc_summaries.py"))
-  generate_tsv_from_readqc_summaries(run_accessions, folder_name)
+  generate_tsv_from_readqc_summaries(run_accessions, paste0(this.dir(), folder_name))
   
 }
 
