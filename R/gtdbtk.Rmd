@@ -42,19 +42,25 @@ all_gtdb <- rbind(
 
 ```
 
+```{r tidy_classification}
+
+all_gtdb <- all_gtdb %>%
+  mutate(Kingdom = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 1), c("d__"=""))) %>% relocate(`Kingdom`, .before = c(1)) %>%
+  mutate(Phylum = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 2), c("a_A"="a", "a_B"="a", "a_C"="a", "_I"="", "p__"=""))) %>% relocate(`Phylum`, .before = c(2)) %>%
+  mutate(Class = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 3), c("c__"=""))) %>% relocate(`Class`, .before = c(3)) %>%
+  mutate(Order = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 4), c("o__"=""))) %>% relocate(`Order`, .before = c(4)) %>%
+  mutate(Family = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 5), c("f__"=""))) %>% relocate(`Family`, .before = c(5)) %>%
+  mutate(Genus = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 6), c("g__"=""))) %>% relocate(`Genus`, .before = c(6)) %>%
+  mutate(Species = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 7), c("s__"=""))) %>% relocate(`Species`, .before = c(7)) 
+
+```
+
 ```{r filter_all_by_busco}
 
 # Run busco.Rmd first!!
 
 busco_gtdb <- left_join(all_gtdb, busco_all, by=c("SampleName"="SampleName", "Bin"="Bin")) %>%
-  filter(Complete >= 0)
-
-```
-
-```{r get_phylum}
-
-busco_gtdb <- busco_gtdb %>%
-  mutate(Phylum = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 2), c("a_A"="a", "a_B"="a", "_C"="", "_I"="", "p__"="")))
+  filter(Complete >= 50)
 
 ```
 
@@ -63,7 +69,7 @@ busco_gtdb <- busco_gtdb %>%
 mag_phyla <- ggplot(busco_gtdb, aes(x = 1, fill = Phylum)) + 
   geom_bar(position="fill") + 
   coord_polar(theta="y") + 
-  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090", "#FDB462", "#FCCDE5")) +
+  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090", "#FDB462", "#FCCDE5", "#AB23FA", "#BF99D1")) +
   xlab("") +
   ylab("") +
   facet_grid(~ SampleName) +

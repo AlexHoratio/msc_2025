@@ -153,8 +153,8 @@ marginal_integrated_scatter
 
 filtered_read_statistics <- read_statistics[read_statistics$bin_count != 0,]
 
-make_ggplot_scatterplot(read_statistics, read_statistics$total_bases_mbp, read_statistics$bin_count) + 
-  geom_point(aes(color = read_statistics$bin_count == 0)) + 
+make_ggplot_scatterplot(filtered_read_statistics, filtered_read_statistics$total_bases_mbp, filtered_read_statistics$bin_count) + 
+  geom_point(aes(color = "red")) + 
   xlab("Total Bases (mbp)") + 
   ylab("Number of bins")
 
