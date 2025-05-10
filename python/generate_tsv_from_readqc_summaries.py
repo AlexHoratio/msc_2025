@@ -63,14 +63,23 @@ def generate_tsv_from_readqc_summaries(run_accessions, run_directory=""):
 
 			run_acc_data["average_bin_n50"] = str(float(t) / float(number_of_bins))
 
+			total_binned_bp = 0
+			for i in range(len(assembly_stats_lines)):
+				if i != 0:
+					split_line = assembly_stats_lines[i].split(",")
+					total_binned_bp += int(split_line[2])
+
+			run_acc_data["total_binned_bp"] = str(total_binned_bp)
+
 		else:
 			run_acc_data["bin_count"] = "0"
 			run_acc_data["average_bin_n50"] = "0"
+			run_acc_data["total_binned_bp"] = "0"
 
 		readqc_summary_data[run_acc] = run_acc_data
 
 	readqc_summary_tsv = "run_accession	"
-	readqc_summary_colnames = ["number_of_reads", "mean_read_length", "read_n50", "mean_read_quality", "total_bases_mbp", "contig_count", "bin_count", "average_bin_n50"]
+	readqc_summary_colnames = ["number_of_reads", "mean_read_length", "read_n50", "mean_read_quality", "total_bases_mbp", "contig_count", "bin_count", "average_bin_n50", "total_binned_bp"]
 
 	for i in range(len(readqc_summary_colnames)):
 		readqc_summary_tsv += readqc_summary_colnames[i] + ("\t" if (i + 1) < len(readqc_summary_colnames) else "")

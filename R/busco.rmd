@@ -67,7 +67,7 @@ ggsave("graphs/busco/mag_busco_completeness_histogram.png", completeness)
 ```{r boxplot_of_completeness}
 
 boxplot_completeness <- ggplot(busco_all, aes(x = `SampleName`, y=Complete, fill=SampleName)) +
-  geom_boxplot() + 
+  geom_boxplot(alpha = 0.8) + 
   scale_y_continuous(breaks = seq(0, 150, 20)) + 
   scale_fill_brewer(palette = "Set1") + 
   xlab("") +

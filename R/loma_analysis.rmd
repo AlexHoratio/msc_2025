@@ -105,32 +105,6 @@ ggsave("graphs/loma/example/sequencing_stats_panel.png", sequencing_stats_panel,
 
 ```{r integrated_sequencing_stats}
 
-format_si <- function(...) {
-  # Based on code by Ben Tupper
-  # https://stat.ethz.ch/pipermail/r-help/2012-January/299804.html
-
-  function(x) {
-    limits <- c(1e-24, 1e-21, 1e-18, 1e-15, 1e-12,
-                1e-9,  1e-6,  1e-3,  1e0,   1e3,
-                1e6,   1e9,   1e12,  1e15,  1e18,
-                1e21,  1e24)
-    prefix <- c("y",   "z",   "a",   "f",   "p",
-                "n",   "µ",   "m",   " ",   "k",
-                "M",   "G",   "T",   "P",   "E",
-                "Z",   "Y")
-
-    # Vector with array indices according to position in intervals
-    i <- findInterval(abs(x), limits)
-
-    # Set prefix to " " for very small values < 1e-24
-    i <- ifelse(i==0, which(limits == 1e0), i)
-
-    paste(format(round(x/limits[i], 1),
-                 trim=TRUE, scientific=FALSE, ...),
-          prefix[i])
-  }
-}
-
 integrated_scatter <- ggplot(read_statistics, aes(x=read_n50, y=number_of_reads, size = total_bases_mbp)) +
   geom_point() + 
   theme_classic() +
@@ -213,5 +187,70 @@ number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, 
 
 number_of_bins
 ggsave("graphs/loma/number_of_bins.png", number_of_bins)
+
+```
+
+
+```{r number_of_contigs}
+
+
+number_of_contigs <- ggplot(read_statistics, aes(x = run_accession, y = contig_count, fill = run_accession)) + 
+  geom_bar(stat="identity", show.legend = TRUE) +
+  geom_text(label = read_statistics$contig_count, size = 6, vjust = -0.2) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
+  scale_y_continuous(labels = format_si()) +
+  ylab("Total \\# of Assembled Contigs") +
+  xlab("") +
+  expand_limits(y = c(0, 18000)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+number_of_contigs
+ggsave("graphs/loma/number_of_contigs.png", number_of_contigs)
+
+```
+
+```{r bin_n50}
+
+
+bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_n50/1000), fill = run_accession)) + 
+  geom_bar(stat="identity", show.legend = TRUE) +
+  geom_text(label = round(read_statistics$average_bin_n50/1000), size = 6, vjust = -0.2) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
+  scale_y_continuous(labels = format_si()) +
+  ylab("Average Bin N50 (Kbp)") +
+  xlab("") +
+  expand_limits(y = c(0, 800)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+bin_n50
+ggsave("graphs/loma/bin_n50.png", bin_n50)
 
 ```

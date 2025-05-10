@@ -342,8 +342,74 @@ prokka_cog_nmds_sums
 
 ```
 
-```{r sum_cog_functions} 
+```{r sum_and_normalize_cog_functions} 
 
-prokka_cog_function_sums <- ddply(prokka_cog_def_sums[, -7], "Description", numcolwise(sum))
+prokka_cog_function_sums <- ddply(prokka_cog_def_sums[, -7], "Description", numcolwise(sum)) %>%
+  transform(R003 = R003/as.numeric(read_statistics[1, 10])) %>%
+  transform(R004 = R004/as.numeric(read_statistics[2, 10])) %>%
+  transform(R005 = R005/as.numeric(read_statistics[3, 10])) %>%
+  transform(R007 = R007/as.numeric(read_statistics[4, 10])) %>%
+  transform(R012 = R012/as.numeric(read_statistics[5, 10])) %>%
+  transform(R018 = R018/as.numeric(read_statistics[6, 10]))
+
+prokka_cog_function_sums_long <- prokka_cog_function_sums %>%
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018"))
+
+prokka_cog_function_sums_bar <- ggplot(prokka_cog_function_sums_long, aes(x=Description, y=value, fill=name)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) +
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(fill = prokka_cog_function_sums_long$name) +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 8),
+    axis.text.x = element_markdown(size = 12),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+)
+
+prokka_cog_function_sums_bar
+ggsave("graphs/prokka/cog_function_sums_bar.png", prokka_cog_function_sums_bar, width = 3000, height = 1400, units = "px")
+
+prokka_cog_function_sums_percentage <- prokka_cog_function_sums %>%
+  mutate(total = rowSums(prokka_cog_function_sums[, c(2:7)])) %>%
+  transform(R003 = R003/total) %>%
+  transform(R004 = R004/total) %>%
+  transform(R005 = R005/total) %>%
+  transform(R007 = R007/total) %>%
+  transform(R012 = R012/total) %>%
+  transform(R018 = R018/total)
+  
+prokka_cog_function_sums_percentage <- prokka_cog_function_sums_percentage[, -c(8)] %>%
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) %>% na.omit()
+
+prokka_cog_function_sums_boxplot <- ggplot(prokka_cog_function_sums_percentage, aes(x=Description, y = value, colour=name)) + 
+  geom_point() +
+  coord_flip() +
+  xlab("") +
+  ylab("Percentage of All Annotations (Across Samples, Normalized by Total Binned b.p.)") +
+  scale_y_continuous(labels = scales::percent, breaks=seq(0, 0.5, 0.1)) +
+  #theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 8),
+    axis.text.x = element_markdown(size = 12),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    panel.grid.major.y = element_line(colour="#00000022"),
+    panel.grid.major.x = element_line(colour="#00000000"),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+)
+
+prokka_cog_function_sums_boxplot
+ggsave("graphs/prokka/cog_function_sums_boxplot.png", prokka_cog_function_sums_boxplot, width = 3000, height = 1400, units = "px")
 
 ```
