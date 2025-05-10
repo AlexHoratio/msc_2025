@@ -99,19 +99,6 @@ prokka_cog_all[is.na(prokka_cog_all)] <- 0
 
 ```
 
-```{r add_cog_def}
-
-prokka_cog_def_all <- left_join(
-  prokka_cog_all,
-  cog_def[, c(1, 2)],
-  by = "COG"
-) %>% left_join(
-  cog_fun[, c(1, 4)],
-  by = "Function"
-)
-
-```
-
 ```{r get_product_sums_by_sample}
 
 prokka_all_sums <- list(
@@ -177,6 +164,32 @@ prokka_cog_all_sums[2:7] <- sapply(prokka_cog_all_sums[2:7], as.numeric)
 
 prokka_cog_all_sums <- t(select(prokka_cog_all_sums, -c(1)))
 colnames(prokka_cog_all_sums) <- cog_names
+
+```
+
+```{r add_cog_def}
+
+prokka_cog_def_all <- left_join(
+  prokka_cog_all,
+  cog_def[, c(1, 2)],
+  by = "COG"
+) %>% left_join(
+  cog_fun[, c(1, 4)],
+  by = "Function"
+)
+
+prokka_cog_all_sums_t <- as.data.frame(t(prokka_cog_all_sums))
+prokka_cog_all_sums_t$COG <- cog_names
+colnames(prokka_cog_all_sums_t) <- c("R003", "R004", "R005", "R007", "R012", "R018", "COG")
+
+prokka_cog_def_sums <- left_join(
+  prokka_cog_all_sums_t, 
+  cog_def[, c(1, 2)],
+  by = "COG"
+) %>% left_join(
+  cog_fun[, c(1, 4)],
+  by = "Function"
+)
 
 ```
 
@@ -331,8 +344,6 @@ prokka_cog_nmds_sums
 
 ```{r sum_cog_functions} 
 
-prokka_cog_function_sums <- prokka_cog_def_all[, -1] %>% 
-  group_by(Function) %>%
-  summarise(sum(across(where(is.numeric))))
+prokka_cog_function_sums <- ddply(prokka_cog_def_sums[, -7], "Description", numcolwise(sum))
 
 ```
