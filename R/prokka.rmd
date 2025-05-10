@@ -1,0 +1,338 @@
+---
+title: "Prokka"
+author: "Alex Caswell"
+date: "2025-05-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r imports}
+
+library(plyr)
+library(tidyverse)
+library(ggExtra)
+library(cowplot)
+library(sitools)
+library(ggtext)
+library(vegan)
+
+source("prokka_utils.r")
+
+```
+
+```{r get_cog_definitions}
+
+cog_def <- read_tsv("data/loma/RAMAN_PROKKA/COG/cog-24.def.tab", col_names = FALSE)
+colnames(cog_def) <- c("COG", "Function", "Name", "Gene", "Pathway", "PubMed ID", "PDB ID")
+
+cog_fun <- read_tsv("data/loma/RAMAN_PROKKA/COG/cog-24.fun.tab", col_names = FALSE) %>% na.omit
+colnames(cog_fun) <- c("Function", "Functional Group", "Hex", "Description")
+
+```
+
+```{r get_prokka_all_products}
+
+prokka_r003 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R003/")
+prokka_r004 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R004/")
+prokka_r005 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R005/")
+prokka_r007 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R007/")
+prokka_r012 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R012/")
+prokka_r018 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R018/")
+
+prokka_all <- list(
+  prokka_r003,
+  prokka_r004,
+  prokka_r005,
+  prokka_r007,
+  prokka_r012,
+  prokka_r018
+) %>% reduce(full_join, by = "product")
+
+prokka_all[is.na(prokka_all)] <- 0
+
+```
+
+```{r get_prokka_kegg}
+
+prokka_kegg_r003 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R003")
+prokka_kegg_r004 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R004")
+prokka_kegg_r005 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R005")
+prokka_kegg_r007 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R007")
+prokka_kegg_r012 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R012")
+prokka_kegg_r018 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R018")
+
+prokka_kegg_all <- list(
+  prokka_kegg_r003,
+  prokka_kegg_r004,
+  prokka_kegg_r005,
+  prokka_kegg_r007,
+  prokka_kegg_r012,
+  prokka_kegg_r018
+) %>% reduce(full_join, by = "KO")
+
+prokka_kegg_all[is.na(prokka_kegg_all)] <- 0
+
+```
+
+```{r get_prokka_cog}
+
+prokka_cog_r003 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R003/")
+prokka_cog_r004 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R004/")
+prokka_cog_r005 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R005/")
+prokka_cog_r007 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R007/")
+prokka_cog_r012 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R012/")
+prokka_cog_r018 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R018/")
+
+prokka_cog_all <- list(
+  prokka_cog_r003,
+  prokka_cog_r004,
+  prokka_cog_r005,
+  prokka_cog_r007,
+  prokka_cog_r012,
+  prokka_cog_r018
+) %>% reduce(full_join, by = "COG")
+
+prokka_cog_all[is.na(prokka_cog_all)] <- 0
+
+```
+
+```{r add_cog_def}
+
+prokka_cog_def_all <- left_join(
+  prokka_cog_all,
+  cog_def[, c(1, 2)],
+  by = "COG"
+) %>% left_join(
+  cog_fun[, c(1, 4)],
+  by = "Function"
+)
+
+```
+
+```{r get_product_sums_by_sample}
+
+prokka_all_sums <- list(
+  as.data.frame(cbind(prokka_r003$product, rowSums(prokka_r003[, -1]))),
+  as.data.frame(cbind(prokka_r004$product, rowSums(prokka_r004[, -1]))),
+  as.data.frame(cbind(prokka_r005$product, rowSums(prokka_r005[, -1]))),
+  as.data.frame(cbind(prokka_r007$product, rowSums(prokka_r007[, -1]))),
+  as.data.frame(cbind(prokka_r012$product, rowSums(prokka_r012[, -1]))),
+  as.data.frame(cbind(prokka_r018$product, rowSums(prokka_r018[, -1])))
+) %>% reduce(full_join, by = "V1")
+
+colnames(prokka_all_sums) <- c("product", "R003", "R004", "R005", "R007", "R012", "R018")
+product_names = prokka_all_sums[, 1]
+prokka_all_sums[is.na(prokka_all_sums)] <- 0
+prokka_all_sums[2:7] <- sapply(prokka_all_sums[2:7], as.numeric)
+
+#raremax <- min(rowSums(t(select(prokka_all_sums, -c(1))))) 
+#prokka_all_sums <- as.data.frame(rrarefy(t(select(prokka_all_sums, -c(1))), raremax))
+
+prokka_all_sums <- t(select(prokka_all_sums, -c(1)))
+colnames(prokka_all_sums) <- product_names
+
+#prokka_all_sums <- subset(prokka_all_sums, select = -c(`hypothetical protein`))
+
+```
+
+```{r get_kegg_sums_by_sample}
+
+prokka_kegg_all_sums <- list(
+  as.data.frame(cbind(prokka_kegg_r003$KO, rowSums(prokka_kegg_r003[, -1]))),
+  as.data.frame(cbind(prokka_kegg_r004$KO, rowSums(prokka_kegg_r004[, -1]))),
+  as.data.frame(cbind(prokka_kegg_r005$KO, rowSums(prokka_kegg_r005[, -1]))),
+  as.data.frame(cbind(prokka_kegg_r007$KO, rowSums(prokka_kegg_r007[, -1]))),
+  as.data.frame(cbind(prokka_kegg_r012$KO, rowSums(prokka_kegg_r012[, -1]))),
+  as.data.frame(cbind(prokka_kegg_r018$KO, rowSums(prokka_kegg_r018[, -1])))
+) %>% reduce(full_join, by = "V1")
+
+colnames(prokka_kegg_all_sums) <- c("KO", "R003", "R004", "R005", "R007", "R012", "R018")
+ko_names = prokka_kegg_all_sums[, 1]
+prokka_kegg_all_sums[is.na(prokka_kegg_all_sums)] <- 0
+prokka_kegg_all_sums[2:7] <- sapply(prokka_kegg_all_sums[2:7], as.numeric)
+
+prokka_kegg_all_sums <- t(select(prokka_kegg_all_sums, -c(1)))
+colnames(prokka_kegg_all_sums) <- ko_names
+
+```
+
+```{r get_cog_sums_by_sample}
+
+prokka_cog_all_sums <- list(
+  as.data.frame(cbind(prokka_cog_r003$COG, rowSums(prokka_cog_r003[, -1]))),
+  as.data.frame(cbind(prokka_cog_r004$COG, rowSums(prokka_cog_r004[, -1]))),
+  as.data.frame(cbind(prokka_cog_r005$COG, rowSums(prokka_cog_r005[, -1]))),
+  as.data.frame(cbind(prokka_cog_r007$COG, rowSums(prokka_cog_r007[, -1]))),
+  as.data.frame(cbind(prokka_cog_r012$COG, rowSums(prokka_cog_r012[, -1]))),
+  as.data.frame(cbind(prokka_cog_r018$COG, rowSums(prokka_cog_r018[, -1])))
+) %>% reduce(full_join, by = "V1")
+
+colnames(prokka_cog_all_sums) <- c("COG", "R003", "R004", "R005", "R007", "R012", "R018")
+cog_names = prokka_cog_all_sums[, 1]
+prokka_cog_all_sums[is.na(prokka_cog_all_sums)] <- 0
+prokka_cog_all_sums[2:7] <- sapply(prokka_cog_all_sums[2:7], as.numeric)
+
+prokka_cog_all_sums <- t(select(prokka_cog_all_sums, -c(1)))
+colnames(prokka_cog_all_sums) <- cog_names
+
+```
+
+```{r beta_diversity_mds_all}
+
+prokka_mds <- vegdist(t(select(prokka_all, -c(1))), method = "bray") %>% metaMDS()
+plot(prokka_mds, type = "t")
+
+```
+
+```{r beta_diversity_mds_sample_sums}
+
+prokka_mds_sums <- vegdist(prokka_all_sums, method = "bray") %>% metaMDS()
+plot(prokka_mds_sums, type = "t") 
+
+```
+
+```{r beta_diversity_mds_kegg_all}
+
+prokka_kegg_mds <- vegdist(t(select(prokka_kegg_all, -c(1))), method = "bray") %>% metaMDS()
+plot(prokka_kegg_mds, type = "t")
+
+```
+
+```{r beta_diversity_mds_kegg_sample_sums}
+
+prokka_kegg_mds_sums <- vegdist(prokka_kegg_all_sums, method = "bray") %>% metaMDS()
+plot(prokka_kegg_mds_sums, type = "t") 
+
+```
+
+```{r beta_diversity_mds_cog_all}
+
+prokka_cog_mds <- vegdist(t(select(prokka_cog_all, -c(1))), method = "bray") %>% metaMDS()
+plot(prokka_cog_mds, type = "t")
+
+```
+
+```{r beta_diversity_mds_cog_sample_sums}
+
+prokka_cog_mds_sums <- vegdist(prokka_cog_all_sums, method = "bray") %>% metaMDS()
+plot(prokka_cog_mds_sums, type = "t") 
+
+```
+
+```{r beta_diversity_ggplot_all}
+
+prokka_mds.scores <- as.data.frame(scores(prokka_mds))
+prokka_mds.scores$SampleName <- sapply(strsplit(rownames(prokka_mds.scores), " "), head, 1)
+prokka_mds.scores$Bin <- sapply(strsplit(rownames(prokka_mds.scores), " "), tail, 1)
+
+prokka_all_nmds <- ggplot(prokka_mds.scores, aes(x = NMDS1, y = NMDS2, colour = SampleName)) + 
+  geom_point(size = 1) + 
+  stat_ellipse()
+
+prokka_all_nmds
+
+```
+
+
+```{r beta_diversity_ggplot_sums}
+
+prokka_mds_sums.scores <- as.data.frame(scores(prokka_mds_sums))
+prokka_mds_sums.scores$SampleName <- sapply(strsplit(rownames(prokka_mds_sums.scores), " "), head, 1)
+
+prokka_all_nmds_sums <- ggplot(prokka_mds_sums.scores, aes(x = NMDS1, y = NMDS2, colour = SampleName)) + 
+  geom_point(size = 5, alpha = 0.2, show.legend=FALSE) + 
+  geom_text(aes(label = SampleName), show.legend=FALSE) + 
+  theme_classic() +
+  xlim(c(-1, 1)) + 
+  ylim(c(-1, 1)) +
+  ggtitle("NMDS Ordination of Total Annotated Gene Products <br>(Across All Bins)") + 
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 12),
+    axis.text.x = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    plot.title = element_markdown(hjust = 0.5),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/prokka/nmds_products_by_sample.png", prokka_all_nmds_sums, width = 2100, height = 1200, units = "px")
+prokka_all_nmds_sums
+
+```
+
+
+```{r beta_diversity_ggplot_kegg_sums}
+
+prokka_kegg_mds_sums.scores <- as.data.frame(scores(prokka_kegg_mds_sums))
+prokka_kegg_mds_sums.scores$SampleName <- sapply(strsplit(rownames(prokka_kegg_mds_sums.scores), " "), head, 1)
+
+prokka_kegg_nmds_sums <- ggplot(prokka_kegg_mds_sums.scores, aes(x = NMDS1, y = NMDS2, colour = SampleName)) + 
+  geom_point(size = 5, alpha = 0.2, show.legend=FALSE) + 
+  geom_text(aes(label = SampleName), show.legend=FALSE) + 
+  theme_classic() +
+  xlim(c(-1, 1)) + 
+  ylim(c(-1, 1)) +
+  ggtitle("NMDS Ordination of Gene Annotations Mapped to KEGG <br>(Across All Bins)") + 
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 12),
+    axis.text.x = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    plot.title = element_markdown(hjust = 0.5),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/prokka/nmds_kegg_by_sample.png", prokka_kegg_nmds_sums, width = 2100, height = 1200, units = "px")
+prokka_kegg_nmds_sums
+
+```
+
+
+```{r beta_diversity_ggplot_cog_sums}
+
+prokka_cog_mds_sums.scores <- as.data.frame(scores(prokka_cog_mds_sums))
+prokka_cog_mds_sums.scores$SampleName <- sapply(strsplit(rownames(prokka_cog_mds_sums.scores), " "), head, 1)
+
+prokka_cog_nmds_sums <- ggplot(prokka_cog_mds_sums.scores, aes(x = NMDS1, y = NMDS2, colour = SampleName)) + 
+  geom_point(size = 5, alpha = 0.2, show.legend=FALSE) + 
+  geom_text(aes(label = SampleName), show.legend=FALSE) + 
+  theme_classic() +
+  xlim(c(-1, 1)) + 
+  ylim(c(-1, 1)) +
+  ggtitle("NMDS Ordination of COG Gene Annotations from Prokka <br>(Across All Bins)") + 
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 12),
+    axis.text.x = element_markdown(size = 12),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef'),
+    plot.title = element_markdown(hjust = 0.5),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/prokka/nmds_cog_by_sample.png", prokka_cog_nmds_sums, width = 2100, height = 1200, units = "px")
+prokka_cog_nmds_sums
+
+```
+
+```{r sum_cog_functions} 
+
+prokka_cog_function_sums <- prokka_cog_def_all[, -1] %>% 
+  group_by(Function) %>%
+  summarise(sum(across(where(is.numeric))))
+
+```
