@@ -30,8 +30,8 @@ prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), prot
 bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken_loma", all_taxa=FALSE, tsv=TRUE) %>%
   remove_absent_taxa()
 
-centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
-  remove_absent_taxa()
+#centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
+ # remove_absent_taxa()
 
 cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/raman/centrifuger_loma", taxrank="S", all_taxa=FALSE) %>%
   remove_absent_taxa()
@@ -57,7 +57,7 @@ alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
 ```{r compare_richness_between_profilers}
 
 colnames(bracken_abundances)[1] <- "taxID"
-centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
+#centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
 cfgr_kreport_abundances$taxID <- as.character(cfgr_kreport_abundances$taxID)
 
 all_abundances <- full_join(
@@ -67,7 +67,7 @@ all_abundances <- full_join(
 
 shared_abundances <- inner_join(
   bracken_abundances %>% add_column(profiler=c("Bracken")),
-  centrifuger_abundances %>% add_column(profiler=c("Centrifuger")),
+  cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger")),
   by = "taxID") %>% full_join(cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger_NT")), by="taxID")
 
 shannon_compare <- ggplot(alpha_diversity, aes(x = profiler, y = Shannon)) + 
@@ -92,21 +92,21 @@ phyla_taxids <- taxonomy[, c(2, 8)]
 # Oh God, it's all hard-coded... 
 
 all_abundances_with_phyla <- inner_join(all_abundances, phyla_taxids, by="taxID")
-all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
+all_abundances_with_phyla[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
 
-phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 6, 11)], sum, na.rm = TRUE)
+phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 8, 15)], sum, na.rm = TRUE)
 
-bracken_phyla_proportions <- phyla_proportions[,c(1:5)]
-colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+bracken_phyla_proportions <- phyla_proportions[,c(1:7)]
+colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007", "R012", "R018")
 
-centrifuger_phyla_proportions <- phyla_proportions[,c(1, 6:9)]
-colnames(centrifuger_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007")
+cfgr_kreport_phyla_proportions <- phyla_proportions[,c(1, 8:13)]
+colnames(cfgr_kreport_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007", "R012", "R018")
 
 phyla_proportions <- rbind(
   bracken_phyla_proportions %>% add_column(profiler=c("Bracken")),
   cfgr_kreport_phyla_proportions %>% add_column(profiler=c("Centrifuger"))
   ) %>% 
-  pivot_longer(cols=c("R003", "R004", "R005", "R007")) 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 remainder <- aggregate(. ~ profiler+name, phyla_proportions[phyla_proportions$value <= 0.02,][, -c(1)], sum) %>%
   add_column(phylum=c("<2% Phyla"))
@@ -138,7 +138,7 @@ compare_phyla <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) +
   )
 
 compare_phyla
-ggsave("graphs/taxprofiler/compare_phyla.png", compare_phyla, width = 2187, height = 800, units="px")
+ggsave("graphs/taxprofiler/compare_phyla.png", compare_phyla, width = 2187, height = 1200, units="px")
 
 ```
 
@@ -253,12 +253,12 @@ shannon_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = Shannon, fi
     legend.position = "top",
   )
 
-ggsave("graphs/taxprofiler/shannon_diversity.png", shannon_diversity, width = 1200, height = 900, units = "px")
+ggsave("graphs/taxprofiler/shannon_diversity.png", shannon_diversity, width = 1800, height = 900, units = "px")
 shannon_diversity
 
 
 isimpson_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = InverseSimpson, fill = profiler)) + 
-  geom_bar(stat = "identity", position = position_dodge(), show.legend = FALSE) + 
+  geom_bar(stat = "identity", position = position_dodge(), show.legend = TRUE) + 
   xlab("") + 
   ylab("Inverse Simpson Diversity") + 
   scale_fill_manual(values = c("#8488B4", "#D08D3C")) +
@@ -277,6 +277,6 @@ isimpson_diversity <- ggplot(alpha_diversity, aes(x = SampleName, y = InverseSim
     legend.position = "top",
   )
 
-ggsave("graphs/taxprofiler/isimpson_diversity.png", isimpson_diversity, width = 1200, height = 900, units = "px")
+ggsave("graphs/taxprofiler/isimpson_diversity.png", isimpson_diversity, width = 1800, height = 900, units = "px")
 isimpson_diversity
 ```

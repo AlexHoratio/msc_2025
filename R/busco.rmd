@@ -26,7 +26,7 @@ busco_all <- rbind(
   busco_r007
 )
 
-busco_genes <- read_tsv("data/busco_genes/all_genes.tsv")
+#busco_genes <- read_tsv("data/busco_genes/all_genes.tsv")
 
 ```
 

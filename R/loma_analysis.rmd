@@ -33,7 +33,7 @@ We need...
 
 ```{r read_statistics}
 
-read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01/RUN01/")
+read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01/")
 
 
 ```
@@ -192,8 +192,8 @@ number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, 
   geom_bar(stat="identity") +
   geom_text(label = read_statistics$bin_count, size = 10, vjust = -0.2) +
   scale_fill_brewer(palette = "Set1") +
-  scale_x_discrete(labels = c("R003", "R004", "R005", "R007")) +
-  ylab("\\# of MAGs") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
+  ylab("Total \\# of MAGs") +
   xlab("") +
   expand_limits(y = c(0, 300)) +
   theme_classic() +
