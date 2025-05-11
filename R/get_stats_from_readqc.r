@@ -25,7 +25,26 @@ make_ggplot_scatterplot <- function(data, xx, yy) {
     geom_point()
 }
 
-
+get_all_assembly_stats <- function(folder_name) {
+  samples = list.dirs(folder_name, recursive = FALSE)
+  assembly_stats = tibble(
+    sampleid=character(),
+    bin=character(),
+    assembly_length_bp=numeric()
+  )
+  
+  for (sample_name in samples) {
+    stats_file <- read_csv(paste0(sample_name, "/assembly/bin_QC/assembly_stats/", sapply(strsplit(sample_name, "/"), tail, 1), ".RUN01.assembly_stats.csv"))
+    
+    assembly_stats <- rbind(
+      assembly_stats,
+      stats_file
+    )
+  }
+  
+  return(assembly_stats)
+  
+}
 
 format_si <- function(...) {
   # Based on code by Ben Tupper
