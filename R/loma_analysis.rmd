@@ -33,7 +33,7 @@ We need...
 
 ```{r read_statistics}
 
-read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01/")
+read_statistics <- get_tsv_from_run_folder("/data/loma/output_ex64/RUN01/")
 read_statistics <- read_statistics %>%
   mutate(mean_bin_bp = total_binned_bp/bin_count)
 
@@ -151,17 +151,46 @@ make_ggplot_scatterplot(filtered_read_statistics, filtered_read_statistics$read_
 ```{r compare_bin_count_to_x}
 
 
-ggplot(read_statistics, aes(x = total_bases_mbp, y = bin_count)) + 
+bases_bincount <- ggplot(filtered_read_statistics, aes(x = total_bases_mbp, y = bin_count)) + 
   geom_point()
 
-ggplot(read_statistics, aes(x = number_of_reads, y = bin_count)) + 
+ggplot(filtered_read_statistics, aes(x = number_of_reads, y = bin_count)) + 
   geom_point()
 
-ggplot(read_statistics, aes(x = read_n50, y = bin_count)) + 
+ggplot(filtered_read_statistics, aes(x = read_n50, y = bin_count)) + 
   geom_point()
 
-ggplot(read_statistics, aes(x = mean_read_length, y = bin_count)) + 
+ggplot(filtered_read_statistics, aes(x = mean_read_length, y = bin_count)) + 
   geom_point()
+
+ggsave("graphs/loma/example/bases_bincount.png", bases_bincount)
+bases_bincount
+
+```
+
+```{r compare_bin_n50_to_x}
+
+
+ggplot(filtered_read_statistics, aes(x = total_bases_mbp, y = average_bin_n50)) + 
+  geom_point()
+
+ggplot(filtered_read_statistics, aes(x = number_of_reads, y = average_bin_n50)) + 
+  geom_point()
+
+in_out_n50 <- ggplot(filtered_read_statistics, aes(x = read_n50, y = average_bin_n50)) + 
+  geom_point()
+
+ggplot(filtered_read_statistics, aes(x = mean_read_length, y = average_bin_n50)) + 
+  geom_point()
+
+ggsave("graphs/loma/example/in_out_n50.png", in_out_n50)
+in_out_n50
+
+```
+
+``` {r make_example_bins_panel}
+
+plot_grid(bases_bincount, in_out_n50, labels = c("A", "B"))
 
 ```
 
