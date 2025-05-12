@@ -14,16 +14,22 @@ library(ggtext)
 
 ```{r get_files}
 
+# These are generated from files in data/busco_summaries using python/generate_tsv_from_busco_summaries.py
+
 busco_r003 <- read_tsv("data/busco_tsv/RAMAN_R003.tsv")
 busco_r004 <- read_tsv("data/busco_tsv/RAMAN_R004.tsv")
 busco_r005 <- read_tsv("data/busco_tsv/RAMAN_R005.tsv")
 busco_r007 <- read_tsv("data/busco_tsv/RAMAN_R007.tsv")
+busco_r012 <- read_tsv("data/busco_tsv/RAMAN_R012.tsv")
+busco_r018 <- read_tsv("data/busco_tsv/RAMAN_R018.tsv")
 
 busco_all <- rbind(
   busco_r003,
   busco_r004,
   busco_r005,
-  busco_r007
+  busco_r007,
+  busco_r012,
+  busco_r018
 )
 
 #busco_genes <- read_tsv("data/busco_genes/all_genes.tsv")
