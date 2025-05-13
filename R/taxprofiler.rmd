@@ -12,6 +12,7 @@ library("ggVennDiagram")
 library("eulerr")
 library("taxonomizr")
 library("ggtext")
+library("RColorBrewer")
 
 source("taxprofiler_utils.r")
 
@@ -20,7 +21,7 @@ source("taxprofiler_utils.r")
 ```{r prepare_taxonomizr_db}
 
 # This can take a while, and crashes my pc sometimes... be warned!!
-prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = FALSE)
+prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = TRUE)
 
 ```
 
@@ -31,7 +32,7 @@ bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/
   remove_absent_taxa()
 
 #centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
- # remove_absent_taxa()
+#  remove_absent_taxa()
 
 cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/raman/centrifuger_loma", taxrank="S", all_taxa=FALSE) %>%
   remove_absent_taxa()
@@ -142,6 +143,35 @@ ggsave("graphs/taxprofiler/compare_phyla.png", compare_phyla, width = 2187, heig
 
 ```
 
+```{r compare_phyla_thesis}
+
+
+compare_phyla_thesis <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Phyla</b> (k-mer classification)") +
+  labs(fill = "Phylum") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_brewer(palette = "Set3") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/taxprofiler/compare_phyla_thesis.png", compare_phyla_thesis, width = 2187, height = 1200, units="px")
+compare_phyla_thesis
+
+```
+
 
 ```{r compare_domains}
 
@@ -156,21 +186,21 @@ domains <- domains[, c(1, 8)]
 # Oh God, it's all hard-coded... 
 
 all_abundances_with_domains <- inner_join(all_abundances, domains, by="taxID")
-all_abundances_with_domains[, c(2, 3, 4, 5, 7, 8, 9, 10)][is.na(all_abundances_with_domains[, c(2, 3, 4, 5, 7, 8, 9, 10)])] <- 0
+all_abundances_with_domains[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_domains[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
 
-domain_proportions <- aggregate(. ~ domain, all_abundances_with_domains[, -c(1, 6, 11)], sum, na.rm = TRUE)
+domain_proportions <- aggregate(. ~ domain, all_abundances_with_domains[, -c(1, 8, 15)], sum, na.rm = TRUE)
 
-centrifuger_domain_proportions <- domain_proportions[,c(1, 6:9)]
-colnames(centrifuger_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007")
+centrifuger_domain_proportions <- domain_proportions[,c(1, 8:13)]
+colnames(centrifuger_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007", "R012", "R018")
 
-bracken_domain_proportions <- domain_proportions[,c(1:5)]
-colnames(bracken_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007")
+bracken_domain_proportions <- domain_proportions[,c(1:7)]
+colnames(bracken_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007", "R012", "R018")
 
 domain_proportions <- rbind(
   bracken_domain_proportions %>% add_column(profiler=c("Bracken")),
   centrifuger_domain_proportions %>% add_column(profiler=c("Centrifuger"))
   ) %>% 
-  pivot_longer(cols=c("R003", "R004", "R005", "R007")) 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 compare_domains <- ggplot(domain_proportions, aes(x=name, y=value, fill=domain)) + 
   geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
@@ -196,6 +226,358 @@ compare_domains <- ggplot(domain_proportions, aes(x=name, y=value, fill=domain))
 
 compare_domains
 ggsave("graphs/taxprofiler/compare_domains.png", compare_domains)
+
+```
+
+```{r compare_domains_thesis}
+
+compare_domains_thesis <- ggplot(domain_proportions, aes(x=name, y=value, fill=domain)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  labs(fill = "Domain") +
+  ggtitle("<b>Distribution of Domains</b> (k-mer classification)") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/taxprofiler/compare_domains_thesis.png", compare_domains_thesis, width = 2187, height = 1200, units="px")
+compare_domains_thesis
+
+```
+
+
+```{r compare_class}
+
+#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+#  data.frame() %>%
+#  add_column(taxID=all_abundances$taxID)
+
+#classes$class[is.na(classes$class)] <- "Other"
+
+classes <- taxonomy[, c(3, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_classes <- inner_join(all_abundances, classes, by="taxID")
+all_abundances_with_classes[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_classes[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+
+classes_proportions <- aggregate(. ~ class, all_abundances_with_classes[, -c(1, 8, 15)], sum, na.rm = TRUE)
+
+centrifuger_classes_proportions <- classes_proportions[,c(1, 8:13)]
+colnames(centrifuger_classes_proportions) <- c("class", "R003", "R004", "R005", "R007", "R012", "R018")
+
+bracken_classes_proportions <- classes_proportions[,c(1:7)]
+colnames(bracken_classes_proportions) <- c("class", "R003", "R004", "R005", "R007", "R012", "R018")
+
+classes_proportions <- rbind(
+  bracken_classes_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_classes_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, classes_proportions[classes_proportions$value <= 0.02,][, -c(1)], sum) %>%
+  add_column(class=c("<2% Classes"))
+
+classes_proportions <- classes_proportions %>%
+  filter(value > c(0.02)) %>%
+  rbind(remainder)
+
+compare_classes <- ggplot(classes_proportions, aes(x=name, y=value, fill=class)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Classes</b> (k-mer classification)") +
+  labs(fill = "Class")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(length(unique((classes_proportions$class))))) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/taxprofiler/compare_classes.png", compare_classes, width = 2187, height = 1200, units="px")
+compare_classes
+
+```
+
+
+```{r compare_order}
+
+#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+#  data.frame() %>%
+#  add_column(taxID=all_abundances$taxID)
+
+#classes$class[is.na(classes$class)] <- "Other"
+
+orders <- taxonomy[, c(4, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_orders <- inner_join(all_abundances, orders, by="taxID")
+all_abundances_with_orders[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_orders[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+
+orders_proportions <- aggregate(. ~ order, all_abundances_with_orders[, -c(1, 8, 15)], sum, na.rm = TRUE)
+
+centrifuger_orders_proportions <- orders_proportions[,c(1, 8:13)]
+colnames(centrifuger_orders_proportions) <- c("order", "R003", "R004", "R005", "R007", "R012", "R018")
+
+bracken_orders_proportions <- orders_proportions[,c(1:7)]
+colnames(bracken_orders_proportions) <- c("order", "R003", "R004", "R005", "R007", "R012", "R018")
+
+orders_proportions <- rbind(
+  bracken_orders_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_orders_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.02,][, -c(1)], sum) %>%
+  add_column(order=c("<2% Orders"))
+
+orders_proportions <- orders_proportions %>%
+  filter(value > c(0.02)) %>%
+  rbind(remainder)
+
+compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Orders</b> (k-mer classification)") +
+  labs(fill = "Order")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(length(unique((orders_proportions$order))))) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/taxprofiler/compare_orders.png", compare_orders, width = 2187, height = 1200, units="px")
+compare_orders
+
+```
+
+
+
+```{r compare_family}
+
+#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+#  data.frame() %>%
+#  add_column(taxID=all_abundances$taxID)
+
+#classes$class[is.na(classes$class)] <- "Other"
+
+families <- taxonomy[, c(5, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_families <- inner_join(all_abundances, families, by="taxID")
+all_abundances_with_families[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_families[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+
+families_proportions <- aggregate(. ~ family, all_abundances_with_families[, -c(1, 8, 15)], sum, na.rm = TRUE)
+
+centrifuger_families_proportions <- families_proportions[,c(1, 8:13)]
+colnames(centrifuger_families_proportions) <- c("family", "R003", "R004", "R005", "R007", "R012", "R018")
+
+bracken_families_proportions <- families_proportions[,c(1:7)]
+colnames(bracken_families_proportions) <- c("family", "R003", "R004", "R005", "R007", "R012", "R018")
+
+families_proportions <- rbind(
+  bracken_families_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_families_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, families_proportions[families_proportions$value <= 0.03,][, -c(1)], sum) %>%
+  add_column(family=c("<3% Families"))
+
+families_proportions <- families_proportions %>%
+  filter(value > c(0.03)) %>%
+  rbind(remainder)
+
+compare_families <- ggplot(families_proportions, aes(x=name, y=value, fill=family)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Families</b> (k-mer classification)") +
+  labs(fill = "Family")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((families_proportions$family))))) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+ggsave("graphs/taxprofiler/compare_families.png", compare_families, width = 2187, height = 1200, units="px")
+compare_families
+
+```
+
+
+
+```{r compare_genus}
+
+#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+#  data.frame() %>%
+#  add_column(taxID=all_abundances$taxID)
+
+#classes$class[is.na(classes$class)] <- "Other"
+
+genuses <- taxonomy[, c(6, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_genus <- inner_join(all_abundances, genuses, by="taxID")
+all_abundances_with_genus[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_genus[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+
+genus_proportions <- aggregate(. ~ genus, all_abundances_with_genus[, -c(1, 8, 15)], sum, na.rm = TRUE)
+
+centrifuger_genus_proportions <- genus_proportions[,c(1, 8:13)]
+colnames(centrifuger_genus_proportions) <- c("genus", "R003", "R004", "R005", "R007", "R012", "R018")
+
+bracken_genus_proportions <- genus_proportions[,c(1:7)]
+colnames(bracken_genus_proportions) <- c("genus", "R003", "R004", "R005", "R007", "R012", "R018")
+
+genus_proportions <- rbind(
+  bracken_genus_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_genus_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, genus_proportions[genus_proportions$value <= 0.04,][, -c(1)], sum) %>%
+  add_column(genus=c("<4% Genuses"))
+
+genus_proportions <- genus_proportions %>%
+  filter(value > c(0.04)) %>%
+  rbind(remainder)
+
+width_scale <- 12 * 26 / length(unique(genus_proportions$genus))
+
+compare_genus <- ggplot(genus_proportions, aes(x=name, y=value, fill=genus)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Genuses</b> (k-mer classification)") +
+  labs(fill = "Genus")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((genus_proportions$genus))))) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.text = element_markdown(size = 8),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+ggsave("graphs/taxprofiler/compare_genus.png", compare_genus, width = 2187, height = 2000, units="px")
+compare_genus
+
+```
+
+
+
+```{r compare_species}
+
+#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
+#  data.frame() %>%
+#  add_column(taxID=all_abundances$taxID)
+
+#classes$class[is.na(classes$class)] <- "Other"
+
+speciess <- taxonomy[, c(7, 8)]
+
+# Oh God, it's all hard-coded... 
+
+all_abundances_with_species <- inner_join(all_abundances, speciess, by="taxID")
+all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+
+species_proportions <- aggregate(. ~ species, all_abundances_with_species[, -c(1, 8, 15)], sum, na.rm = TRUE)
+
+centrifuger_species_proportions <- species_proportions[,c(1, 8:13)]
+colnames(centrifuger_species_proportions) <- c("species", "R003", "R004", "R005", "R007", "R012", "R018")
+
+bracken_species_proportions <- species_proportions[,c(1:7)]
+colnames(bracken_species_proportions) <- c("species", "R003", "R004", "R005", "R007", "R012", "R018")
+
+species_proportions <- rbind(
+  bracken_species_proportions %>% add_column(profiler=c("Bracken")),
+  centrifuger_species_proportions %>% add_column(profiler=c("Centrifuger"))
+  ) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.04,][, -c(1)], sum) %>%
+  add_column(species=c("<4% Species"))
+
+species_proportions <- species_proportions %>%
+  filter(value > c(0.04)) %>%
+  rbind(remainder)
+
+compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species)) + 
+  geom_bar(stat="identity", na.rm=TRUE, position = "fill", show.legend=TRUE) + 
+  facet_wrap(~ profiler) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  ggtitle("<b>Distribution of Species</b> (k-mer classification)") +
+  labs(fill = "Species")+
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((species_proportions$species))))) +
+  theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.box.margin = margin(0, 10, 0, 0),
+    legend.text = element_markdown(size = 8),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+ggsave("graphs/taxprofiler/compare_species.png", compare_species, width = 2187, height = 2000, units="px")
+compare_species
 
 ```
 

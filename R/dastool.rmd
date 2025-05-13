@@ -1,0 +1,24 @@
+---
+title: "DASTool"
+author: "Alex Caswell"
+date: "2025-05-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r get_files}
+
+dastool_summaries <- data.frame()
+
+for (filename in list.files("data/mag/GenomeBinning/DASTool")) {
+  if (length(dastool_summaries) == 0) {
+    dastool_summaries <- read_tsv(paste0("data/mag/GenomeBinning/DASTool/", filename), col_names = TRUE)
+  } else {
+    dastool_summaries <- rbind(dastool_summaries, read_tsv(paste0("data/mag/GenomeBinning/DASTool/", filename), col_names = TRUE))
+  }
+}
+
+```

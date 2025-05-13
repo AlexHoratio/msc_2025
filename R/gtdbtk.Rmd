@@ -11,6 +11,7 @@ output:
 
 library(tidyverse)
 library(ggtext)
+library(networkD3)
 
 ```
 
@@ -24,6 +25,8 @@ r005_bac120 <- read_tsv("data/gtdbtk/RAMAN_R005/gtdbtk.bac120.summary.tsv")
 r005_ar53 <- read_tsv("data/gtdbtk/RAMAN_R005/gtdbtk.ar53.summary.tsv")
 r007_bac120 <- read_tsv("data/gtdbtk/RAMAN_R007/gtdbtk.bac120.summary.tsv")
 r007_ar53 <- read_tsv("data/gtdbtk/RAMAN_R007/gtdbtk.ar53.summary.tsv")
+r012_bac120 <- read_tsv("data/gtdbtk/RAMAN_R012/gtdbtk.bac120.summary.tsv")
+r018_bac120 <- read_tsv("data/gtdbtk/RAMAN_R018/gtdbtk.bac120.summary.tsv")
 
 all_gtdb <- rbind(
     r003_bac120,
@@ -32,7 +35,9 @@ all_gtdb <- rbind(
     r005_bac120,
     r005_ar53,
     r007_bac120,
-    r007_ar53
+    r007_ar53,
+    r012_bac120,
+    r018_bac120
   ) %>% 
   filter(!grepl("unbinned", user_genome)) %>%
   mutate(SampleName=str_extract(user_genome, "[R]+[0-9]+")) %>%
@@ -64,12 +69,21 @@ busco_gtdb <- left_join(all_gtdb, busco_all, by=c("SampleName"="SampleName", "Bi
 
 ```
 
+```{r add_bracken_abundances}
+
+busco_gtdb <- busco_gtdb %>%
+  mutate(taxID = accessionToTaxa(busco_gtdb$closest_genome_reference, "data/accessionTaxa.sql"))
+
+#busco_gtdb_bracken <- left_join(busco_gtdb, bracken_abundances, by=c("SampleName"="SampleName", "taxID"="taxID"))
+
+```
+
 ```{r plot_phyla}
 
 mag_phyla <- ggplot(busco_gtdb, aes(x = 1, fill = Phylum)) + 
   geom_bar(position="fill") + 
   coord_polar(theta="y") + 
-  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090", "#FDB462", "#FCCDE5", "#AB23FA", "#BF99D1")) +
+  scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090",  "#BF99D1", "#FDB462", "#FCCDE5", "#BF99D1")) +
   xlab("") +
   ylab("") +
   facet_grid(~ SampleName) +
@@ -96,13 +110,48 @@ mag_phyla
 
 ```
 
+```{r plot_species}
+
+species_freqs <- data.frame(table(busco_gtdb$Species))
+colnames(species_freqs) <- c("Species", "Count")
+  
+busco_gtdb_with_freqs <- busco_gtdb[, c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species", "SampleName", "Bin", "Complete")] %>%
+  left_join(species_freqs, by = "Species")
+
+mag_species <- ggplot(busco_gtdb[(busco_gtdb$Species != "") & (busco_gtdb$Complete > 98), ], aes(x = reorder(Species, (Complete)), fill = SampleName)) + 
+  geom_bar() + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face = "bold", size = 12),
+    axis.text.x = element_blank(),
+    axis.title.x = element_markdown(),
+    axis.title.y = element_markdown(),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef'),
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = '#fff7ef'),
+    legend.background = element_rect(fill = '#fff7ef'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.margin = margin(b = 20)
+  )
+
+ggsave("graphs/gtdbtk/mag_species.png", mag_species, width = 3000, height = 2100, units = "px")
+mag_species
+
+```
+
 ```{r phyla_by_completeness}
 
 phylum_completeness <- ggplot(busco_gtdb, aes(x = Phylum, y = Complete, fill = Phylum)) +
   geom_jitter(aes(colour = SampleName), alpha = 1.0, show.legend = FALSE) +
   geom_boxplot(aes(alpha = 0.8), outlier.shape = NA, show.legend = FALSE) +
   theme_classic() + 
-  scale_colour_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set2") +
   scale_fill_manual(values = c("#FFFFB3", "#BEBADA", "#FB8072", "#909090", "#FDB462", "#FCCDE5", "#AB23FA", "#BF99D1")) +
   xlab("") +
   ylab("Completeness (%)") +
@@ -122,5 +171,17 @@ phylum_completeness <- ggplot(busco_gtdb, aes(x = Phylum, y = Complete, fill = P
 
 ggsave("graphs/gtdbtk/phylum_completeness.png", phylum_completeness, width = 2800, height = 1800, units="px")
 phylum_completeness
+
+```
+
+```{r classification_sankey}
+
+busco_gtdb_sankey_data <- busco_gtdb
+
+classification_sankey <- ggplot()
+
+
+
+classification_sankey
 
 ```

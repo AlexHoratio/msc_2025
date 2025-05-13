@@ -17,6 +17,7 @@ library(ggtext)
 library(sitools)
 library(cowplot)
 library(ggExtra)
+library(ggpmisc)
 
 ```
 
@@ -151,8 +152,20 @@ make_ggplot_scatterplot(filtered_read_statistics, filtered_read_statistics$read_
 ```{r compare_bin_count_to_x}
 
 
-bases_bincount <- ggplot(filtered_read_statistics, aes(x = total_bases_mbp, y = bin_count)) + 
-  geom_point()
+bases_bincount <- ggplot(filtered_read_statistics, aes(x = (total_bases_mbp/1000), y = bin_count)) + 
+  stat_poly_line() +
+  stat_poly_eq(use_label(c("R2", "p"))) +
+  geom_point() + 
+  xlab("<b>Total Bases</b> (<i>Gbp</i>)") + 
+  ylab("<b>Number of Bins</b>") + 
+  ggtitle("<b>More sequencing</b> produces <b>more bins</b>.") +
+  scale_y_continuous(breaks = seq(0, 600, 100)) +
+  theme_classic() + 
+  theme(
+    axis.title.x = element_markdown(hjust = 0.1, size = 13),
+    axis.title.y = element_markdown(hjust = 0.1, size = 13),
+    plot.title = element_markdown(hjust = 0.5, size = 16)
+  )
 
 ggplot(filtered_read_statistics, aes(x = number_of_reads, y = bin_count)) + 
   geom_point()
@@ -177,8 +190,20 @@ ggplot(filtered_read_statistics, aes(x = total_bases_mbp, y = average_bin_n50)) 
 ggplot(filtered_read_statistics, aes(x = number_of_reads, y = average_bin_n50)) + 
   geom_point()
 
-in_out_n50 <- ggplot(filtered_read_statistics, aes(x = read_n50, y = average_bin_n50)) + 
-  geom_point()
+in_out_n50 <- ggplot(filtered_read_statistics, aes(x = round(10*read_n50/1000)/10, y = round(10*average_bin_n50/1000)/10)) + 
+  stat_poly_line() +
+  stat_poly_eq(use_label(c("R2", "p"))) +
+  geom_point() + 
+  xlab("<b>N50 of reads</b> (<i>Kbp</i>)") + 
+  ylab("<b>N50 of bins</b> (<i>Kbp</i>)") + 
+  ggtitle("<b>Longer reads</b> produce <b>more contiguous</b> bins.") +
+  scale_x_continuous(breaks = seq(0, 30, 5)) +
+  theme_classic() + 
+  theme(
+    axis.title.x = element_markdown(hjust = 0.1, size = 13),
+    axis.title.y = element_markdown(hjust = 0.1, size = 13),
+    plot.title = element_markdown(hjust = 0.5, size = 16)
+  )
 
 ggplot(filtered_read_statistics, aes(x = mean_read_length, y = average_bin_n50)) + 
   geom_point()
@@ -190,7 +215,10 @@ in_out_n50
 
 ``` {r make_example_bins_panel}
 
-plot_grid(bases_bincount, in_out_n50, labels = c("A", "B"))
+binning_panel <- plot_grid(bases_bincount, in_out_n50, labels = c("A", "B"), rel_widths = c(0.95, 1))
+
+ggsave("graphs/loma/example/binning_panel.png", binning_panel, width = 3000, height = 1400, units = "px")
+binning_panel
 
 ```
 

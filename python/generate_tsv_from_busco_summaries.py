@@ -69,13 +69,13 @@ def generate_tsv_from_busco_summaries(busco_summaries_folder):
 			busco_summary_tsv += str(data_entry[tsv_colnames[i]]) + ("\t" if i < len(tsv_colnames) - 1 else "")
 
 	# I know, I know, it's hard-coded...!!
-	#file = open("C:\\Users\\horat\\Desktop\\msc_2025\\R\\data\\busco_tsv\\RAMAN_R012.tsv", "w")
-	file = open("../R/data/busco_tsv/RAMAN_R018.tsv", "w+")
+	file = open("C:\\Users\\horat\\Desktop\\msc_2025\\R\\data\\busco_tsv\\RAMAN_R018.tsv", "w")
+	#file = open("../R/data/busco_tsv/RAMAN_R018.tsv", "w+")
 	file.write(busco_summary_tsv)
 	file.close()
 
 	return busco_summary_tsv
 
 if __name__ == "__main__":
-	#generate_tsv_from_busco_summaries("C:\\Users\\horat\\Desktop\\msc_2025\\R\\data\\busco_summaries\\RAMAN_R012")
-	generate_tsv_from_busco_summaries("../R/data/busco_summaries/RAMAN_R018")
+	generate_tsv_from_busco_summaries("C:\\Users\\horat\\Desktop\\msc_2025\\R\\data\\busco_summaries\\RAMAN_R018")
+	#generate_tsv_from_busco_summaries("../R/data/busco_summaries/RAMAN_R018")
