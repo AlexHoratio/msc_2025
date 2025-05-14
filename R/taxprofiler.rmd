@@ -13,6 +13,8 @@ library("eulerr")
 library("taxonomizr")
 library("ggtext")
 library("RColorBrewer")
+library("cowplot")
+library("plotly")
 
 source("taxprofiler_utils.r")
 
@@ -21,7 +23,7 @@ source("taxprofiler_utils.r")
 ```{r prepare_taxonomizr_db}
 
 # This can take a while, and crashes my pc sometimes... be warned!!
-prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = TRUE)
+prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = FALSE)
 
 ```
 
@@ -109,11 +111,11 @@ phyla_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, phyla_proportions[phyla_proportions$value <= 0.02,][, -c(1)], sum) %>%
-  add_column(phylum=c("<2% Phyla"))
+remainder <- aggregate(. ~ profiler+name, phyla_proportions[phyla_proportions$value <= 0.01,][, -c(1)], sum) %>%
+  add_column(phylum=c("<1% Phyla"))
 
 phyla_proportions <- phyla_proportions %>%
-  filter(value > c(0.02)) %>%
+  filter(value > c(0.01)) %>%
   rbind(remainder)
 
 compare_phyla <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) + 
@@ -131,9 +133,9 @@ compare_phyla <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) +
     axis.text.x = element_markdown(size = 12),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
   )
@@ -152,22 +154,25 @@ compare_phyla_thesis <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phyl
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Phyla</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Phyla</b> (k-mer classification)") +
   labs(fill = "Phylum") +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
-  scale_fill_brewer(palette = "Set3") +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((phyla_proportions$phylum))))) +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(-10, 0, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
+    legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_phyla_thesis.png", compare_phyla_thesis, width = 2187, height = 1200, units="px")
+ggsave("graphs/taxprofiler/compare_phyla_thesis.png", compare_phyla_thesis, width = 2187, height = 900, units="px")
 compare_phyla_thesis
 
 ```
@@ -238,21 +243,24 @@ compare_domains_thesis <- ggplot(domain_proportions, aes(x=name, y=value, fill=d
   xlab("") +
   ylab("") +
   labs(fill = "Domain") +
-  ggtitle("<b>Distribution of Domains</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Domains</b> (k-mer classification)") +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_brewer(palette = "Set1") +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(-10, 0, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
+    legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_domains_thesis.png", compare_domains_thesis, width = 2187, height = 1200, units="px")
+ggsave("graphs/taxprofiler/compare_domains_thesis.png", compare_domains_thesis, width = 2187, height = 800, units="px")
 compare_domains_thesis
 
 ```
@@ -300,22 +308,25 @@ compare_classes <- ggplot(classes_proportions, aes(x=name, y=value, fill=class))
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Classes</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Classes</b> (k-mer classification)") +
   labs(fill = "Class")+
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(length(unique((classes_proportions$class))))) +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(0, 10, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
+    legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_classes.png", compare_classes, width = 2187, height = 1200, units="px")
+ggsave("graphs/taxprofiler/compare_classes.png", compare_classes, width = 2187, height = 1000, units="px")
 compare_classes
 
 ```
@@ -368,17 +379,20 @@ compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(length(unique((orders_proportions$order))))) +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(0, 10, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
+    legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_orders.png", compare_orders, width = 2187, height = 1200, units="px")
+ggsave("graphs/taxprofiler/compare_orders.png", compare_orders, width = 2187, height = 1100, units="px")
 compare_orders
 
 ```
@@ -432,14 +446,17 @@ compare_families <- ggplot(families_proportions, aes(x=name, y=value, fill=famil
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((families_proportions$family))))) +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 3)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(0, 10, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
+    legend.position = "bottom",
   )
 
 ggsave("graphs/taxprofiler/compare_families.png", compare_families, width = 2187, height = 1200, units="px")
@@ -478,11 +495,11 @@ genus_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, genus_proportions[genus_proportions$value <= 0.04,][, -c(1)], sum) %>%
-  add_column(genus=c("<4% Genuses"))
+remainder <- aggregate(. ~ profiler+name, genus_proportions[genus_proportions$value <= 0.03,][, -c(1)], sum) %>%
+  add_column(genus=c("<3% Genuses"))
 
 genus_proportions <- genus_proportions %>%
-  filter(value > c(0.04)) %>%
+  filter(value > c(0.03)) %>%
   rbind(remainder)
 
 width_scale <- 12 * 26 / length(unique(genus_proportions$genus))
@@ -493,28 +510,27 @@ compare_genus <- ggplot(genus_proportions, aes(x=name, y=value, fill=genus)) +
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Genuses</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Genera</b> (k-mer classification)") +
   labs(fill = "Genus")+
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((genus_proportions$genus))))) +
   theme_classic() +
+  guides(fill = guide_legend(ncol = 4)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    legend.text = element_markdown(size = 8),
+    legend.text = element_markdown(size = 10),
     legend.title = element_blank(),
     legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_genus.png", compare_genus, width = 2187, height = 2000, units="px")
+ggsave("graphs/taxprofiler/compare_genus.png", compare_genus, width = 2187, height = 1300, units="px")
 compare_genus
 
 ```
-
-
 
 ```{r compare_species}
 
@@ -545,11 +561,11 @@ species_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.04,][, -c(1)], sum) %>%
-  add_column(species=c("<4% Species"))
+remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.03,][, -c(1)], sum) %>%
+  add_column(species=c("<3% Species"))
 
 species_proportions <- species_proportions %>%
-  filter(value > c(0.04)) %>%
+  filter(value > c(0.03)) %>%
   rbind(remainder)
 
 compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species)) + 
@@ -563,21 +579,27 @@ compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((species_proportions$species))))) +
   theme_classic() +
-  guides(fill = guide_legend(ncol = 4)) +
+  guides(fill = guide_legend(ncol = 3)) +
   theme(
-    axis.text.y = element_markdown(face="bold", size = 20),
+    axis.text.y = element_markdown(face="bold", size = 14),
     axis.text.x = element_markdown(size = 12),
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     legend.box.margin = margin(0, 10, 0, 0),
-    legend.text = element_markdown(size = 8),
+    legend.text = element_markdown(size = 10),
     legend.title = element_blank(),
     legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_species.png", compare_species, width = 2187, height = 2000, units="px")
+ggsave("graphs/taxprofiler/compare_species.png", compare_species, width = 2187, height = 1600, units="px")
 compare_species
+
+```
+
+```{r make_plotly}
+
+plotly_build(compare_species)
 
 ```
 

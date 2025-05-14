@@ -1,0 +1,47 @@
+---
+title: "nf-core/mag"
+author: "Alex Caswell"
+date: "2025-05-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r imports}
+
+library(tidyverse)
+
+```
+
+```{r get_gtdb}
+
+dastool_bac120 <- read_tsv("data/gtdbtk/nfcoremag_four/gtdbtk.bac120.summary.tsv")
+dastool_ar53 <- read_tsv("data/gtdbtk/nfcoremag_four/gtdbtk.ar53.summary.tsv")
+
+dastool_gtdb <- rbind(
+    dastool_bac120,
+    dastool_ar53
+  ) %>% 
+  filter(!grepl("unbinned", user_genome)) %>%
+  mutate(SampleName=str_extract(user_genome, "[R]+[0-9]+")) %>%
+  mutate(Bin=str_extract(user_genome, "(?<=\\.)[0-9]+")) %>%
+  mutate(Assembler=str_extract(user_genome, "FLYE|METAMDBG")) %>%
+  mutate(Binner=str_extract(user_genome, "MetaBAT2|MaxBin2")) %>%
+  mutate(Kingdom = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 1), c("d__"=""))) %>% relocate(`Kingdom`, .before = c(1)) %>%
+  mutate(Phylum = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 2), c("a_A"="a", "a_B"="a", "a_C"="a", "_I"="", "p__"=""))) %>% relocate(`Phylum`, .before = c(2)) %>%
+  mutate(Class = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 3), c("c__"=""))) %>% relocate(`Class`, .before = c(3)) %>%
+  mutate(Order = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 4), c("o__"=""))) %>% relocate(`Order`, .before = c(4)) %>%
+  mutate(Family = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 5), c("f__"=""))) %>% relocate(`Family`, .before = c(5)) %>%
+  mutate(Genus = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 6), c("g__"=""))) %>% relocate(`Genus`, .before = c(6)) %>%
+  mutate(Species = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 7), c("s__"=""))) %>% relocate(`Species`, .before = c(7)) %>%
+  subset(select = -c(`closest_genome_taxonomy`, 
+                     `other_related_references(genome_id,species_name,radius,ANI,AF)`,
+                     `closest_placement_taxonomy`,
+                     `pplacer_taxonomy`,
+                     `user_genome`,
+                     `classification`)) 
+
+
+```
