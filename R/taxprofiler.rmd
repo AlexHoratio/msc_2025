@@ -295,11 +295,11 @@ classes_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, classes_proportions[classes_proportions$value <= 0.02,][, -c(1)], sum) %>%
-  add_column(class=c("<2% Classes"))
+remainder <- aggregate(. ~ profiler+name, classes_proportions[classes_proportions$value <= 0.015,][, -c(1)], sum) %>%
+  add_column(class=c("<1.5% Classes"))
 
 classes_proportions <- classes_proportions %>%
-  filter(value > c(0.02)) %>%
+  filter(value > c(0.015)) %>%
   rbind(remainder)
 
 compare_classes <- ggplot(classes_proportions, aes(x=name, y=value, fill=class)) + 
@@ -326,7 +326,7 @@ compare_classes <- ggplot(classes_proportions, aes(x=name, y=value, fill=class))
     legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_classes.png", compare_classes, width = 2187, height = 1000, units="px")
+ggsave("graphs/taxprofiler/compare_classes.png", compare_classes, width = 2187, height = 1100, units="px")
 compare_classes
 
 ```
@@ -361,11 +361,11 @@ orders_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.02,][, -c(1)], sum) %>%
-  add_column(order=c("<2% Orders"))
+remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.00,][, -c(1)], sum) %>%
+  add_column(order=c("<1.5% Orders"))
 
 orders_proportions <- orders_proportions %>%
-  filter(value > c(0.02)) %>%
+  filter(value > c(0.00)) %>%
   rbind(remainder)
 
 compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) + 
@@ -374,7 +374,7 @@ compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) +
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Orders</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Orders</b> (k-mer classification)") +
   labs(fill = "Order")+
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set2"))(length(unique((orders_proportions$order))))) +
@@ -386,14 +386,14 @@ compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) +
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    legend.margin = margin(0, 10, 0, 0),
+    legend.margin = margin(0, 50, 0, 0),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
     legend.position = "bottom",
   )
 
 ggsave("graphs/taxprofiler/compare_orders.png", compare_orders, width = 2187, height = 1100, units="px")
-compare_orders
+plotly_build(compare_orders)
 
 ```
 
@@ -428,11 +428,11 @@ families_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, families_proportions[families_proportions$value <= 0.03,][, -c(1)], sum) %>%
-  add_column(family=c("<3% Families"))
+remainder <- aggregate(. ~ profiler+name, families_proportions[families_proportions$value <= 0.005,][, -c(1)], sum) %>%
+  add_column(family=c("<1% Families"))
 
 families_proportions <- families_proportions %>%
-  filter(value > c(0.03)) %>%
+  filter(value > c(0.005)) %>%
   rbind(remainder)
 
 compare_families <- ggplot(families_proportions, aes(x=name, y=value, fill=family)) + 
@@ -441,7 +441,7 @@ compare_families <- ggplot(families_proportions, aes(x=name, y=value, fill=famil
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Families</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Families</b> (k-mer classification)") +
   labs(fill = "Family")+
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((families_proportions$family))))) +
@@ -459,8 +459,8 @@ compare_families <- ggplot(families_proportions, aes(x=name, y=value, fill=famil
     legend.position = "bottom",
   )
 
-ggsave("graphs/taxprofiler/compare_families.png", compare_families, width = 2187, height = 1200, units="px")
-compare_families
+ggsave("graphs/taxprofiler/compare_families.png", compare_families, width = 2187, height = 1250, units="px")
+plotly_build(compare_families)
 
 ```
 
@@ -561,11 +561,11 @@ species_proportions <- rbind(
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.03,][, -c(1)], sum) %>%
-  add_column(species=c("<3% Species"))
+remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.01,][, -c(1)], sum) %>%
+  add_column(species=c("<1% Species"))
 
 species_proportions <- species_proportions %>%
-  filter(value > c(0.03)) %>%
+  filter(value > c(0.01)) %>%
   rbind(remainder)
 
 compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species)) + 
@@ -574,7 +574,7 @@ compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species
   coord_flip() +
   xlab("") +
   ylab("") +
-  ggtitle("<b>Distribution of Species</b> (k-mer classification)") +
+  #ggtitle("<b>Distribution of Species</b> (k-mer classification)") +
   labs(fill = "Species")+
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
   scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((species_proportions$species))))) +

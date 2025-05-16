@@ -58,9 +58,9 @@ completeness <- ggplot(busco_all, aes(x = `Complete`, fill=SampleName)) +
     axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
   )

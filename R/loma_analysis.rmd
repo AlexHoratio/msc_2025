@@ -34,7 +34,7 @@ We need...
 
 ```{r read_statistics}
 
-read_statistics <- get_tsv_from_run_folder("/data/loma/output_ex64/RUN01/")
+read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01_raman/")
 read_statistics <- read_statistics %>%
   mutate(mean_bin_bp = total_binned_bp/bin_count)
 
@@ -42,7 +42,7 @@ read_statistics <- read_statistics %>%
 
 ```{r get_assembly_stats}
 
-assembly_stats <- get_all_assembly_stats("data/loma/RUN01")
+assembly_stats <- get_all_assembly_stats("data/loma/RUN01_raman")
 
 ```
 
@@ -227,7 +227,7 @@ binning_panel
 
 
 number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, fill = run_accession)) + 
-  geom_bar(stat="identity") +
+  geom_bar(stat="identity", colour = "black") +
   geom_text(label = read_statistics$bin_count, size = 10, vjust = -0.2) +
   scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
@@ -242,9 +242,9 @@ number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, 
     axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank()
   )
@@ -291,7 +291,7 @@ ggsave("graphs/loma/number_of_contigs.png", number_of_contigs)
 
 
 bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_n50/1000), fill = run_accession)) + 
-  geom_bar(stat="identity", show.legend = TRUE) +
+  geom_bar(stat="identity", show.legend = TRUE, colour="black") +
   geom_text(label = round(read_statistics$average_bin_n50/1000), size = 6, vjust = -0.2) +
   scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
@@ -307,9 +307,9 @@ bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_
     axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank()
   )
@@ -378,5 +378,31 @@ bin_size_boxplot <- ggplot(assembly_stats, aes(x = sampleid, y = round(100*assem
 
 bin_size_boxplot
 ggsave("graphs/loma/bin_size_boxplot.png", bin_size_boxplot)
+
+```
+
+```{r histogram_of_all_bins_n50}
+
+all_bins_n50 <- ggplot(assembly_stats, aes(x = contig_N50_bp, fill = sampleid)) + 
+  geom_histogram(boundary = 0, closed = "left", col="grey") +
+  scale_x_continuous(labels = format_si()) +
+  ylab("\\# of MAGs") +
+  xlab("Contig N50 (b.p.)") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+all_bins_n50
 
 ```

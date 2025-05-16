@@ -15,13 +15,31 @@ library(tidyverse)
 
 ```
 
+``` {r get_dastool_summaries}
+
+dastool_summaries <- data.frame()
+
+for (filename in list.files("data/mag/GenomeBinning/DASTool")) {
+  if (length(dastool_summaries) == 0) {
+    dastool_summaries <- read_tsv(paste0("data/mag/GenomeBinning/DASTool/", filename), col_names = TRUE)
+  } else {
+    dastool_summaries <- rbind(dastool_summaries, read_tsv(paste0("data/mag/GenomeBinning/DASTool/", filename), col_names = TRUE))
+  }
+}
+
+names(dastool_summaries)[names(dastool_summaries) == 'bin'] <- 'user_genome'
+
+```
+
 ```{r get_gtdb}
 
-dastool_bac120 <- read_tsv("data/gtdbtk/nfcoremag_four/gtdbtk.bac120.summary.tsv")
-dastool_ar53 <- read_tsv("data/gtdbtk/nfcoremag_four/gtdbtk.ar53.summary.tsv")
+dastool_bac120 <- read_tsv("data/gtdbtk/nfcoremag/gtdbtk.bac120.summary.tsv")
+dastool_bac120_extra <- read_tsv("data/gtdbtk/nfcoremag/r012_r018.gtdbtk.bac120.summary.tsv")
+dastool_ar53 <- read_tsv("data/gtdbtk/nfcoremag/gtdbtk.ar53.summary.tsv")
 
 dastool_gtdb <- rbind(
     dastool_bac120,
+    dastool_bac120_extra,
     dastool_ar53
   ) %>% 
   filter(!grepl("unbinned", user_genome)) %>%
@@ -36,12 +54,126 @@ dastool_gtdb <- rbind(
   mutate(Family = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 5), c("f__"=""))) %>% relocate(`Family`, .before = c(5)) %>%
   mutate(Genus = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 6), c("g__"=""))) %>% relocate(`Genus`, .before = c(6)) %>%
   mutate(Species = str_replace_all(sapply(strsplit(classification, ";", fixed=TRUE), '[', 7), c("s__"=""))) %>% relocate(`Species`, .before = c(7)) %>%
+  left_join(dastool_summaries, by = "user_genome") %>%
   subset(select = -c(`closest_genome_taxonomy`, 
                      `other_related_references(genome_id,species_name,radius,ANI,AF)`,
                      `closest_placement_taxonomy`,
                      `pplacer_taxonomy`,
                      `user_genome`,
+                     `bin_set`,
                      `classification`)) 
 
+
+```
+
+
+```{r visualize_mags}
+
+visualize_mags <- ggplot(dastool_gtdb[dastool_gtdb$SCG_completeness > 95, ] %>% drop_na(), aes(x = size, y = N50, colour=SampleName)) + 
+  geom_point(aes(size = size)) + 
+  facet_wrap(. ~ Assembler) 
+
+visualize_mags
+
+```
+
+```{r histogram_of_completeness}
+
+completeness <- ggplot(dastool_gtdb, aes(x = `SCG_completeness`, fill=SampleName)) +
+  geom_histogram(binwidth = 10, boundary = 0, closed = "left", col="grey") + 
+  scale_x_continuous(breaks = seq(0, 100, 10)) +
+  scale_y_continuous(breaks = seq(0, 850, 50)) + 
+  scale_fill_brewer(palette = "Set1") + 
+  ylab("\\# of MAGs") +
+  xlab("Completeness (%)") +
+  theme_light() +
+  facet_wrap(. ~ Assembler) +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 16),
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+  )
+
+completeness
+ggsave("graphs/nfmag/completeness_histogram.png", completeness)
+
+```
+
+
+```{r number_of_bins}
+
+dastool_count_bins <- data.frame(
+  SampleName = names(table(dastool_gtdb$SampleName)),
+  bin_count = as.vector(table(dastool_gtdb$SampleName))
+  ) 
+
+nfmag_number_of_bins <- ggplot(dastool_count_bins, aes(x = SampleName, y = bin_count, fill = SampleName)) + 
+  geom_bar(stat="identity", colour = "black") +
+  geom_text(label = dastool_count_bins$bin_count, size = 10, vjust = -0.2) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
+  ylab("Total \\# of Genome Bins") +
+  xlab("") +
+  expand_limits(y = c(0, 300)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 20),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+nfmag_number_of_bins
+ggsave("graphs/nfmag/number_of_bins.png", nfmag_number_of_bins)
+
+```
+
+```{r bin_n50}
+
+
+dastool_avg_bins_n50 <- aggregate(dastool_gtdb, by = list(dastool_gtdb$SampleName), FUN = "mean")[, c("Group.1", "N50")] %>%
+  setNames(c("SampleName", "N50"))
+
+bin_n50 <- ggplot(dastool_avg_bins_n50, aes(x = SampleName, y = round(N50/1000), fill = SampleName)) + 
+  geom_bar(stat="identity", show.legend = TRUE, colour="black") +
+  geom_text(label = round(dastool_avg_bins_n50$N50/1000), size = 6, vjust = -0.2) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
+  scale_y_continuous(labels = format_si()) +
+  ylab("Average Bin N50 (Kbp)") +
+  xlab("") +
+  expand_limits(y = c(0, 1800)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 16),
+    axis.text.x = element_markdown(size = 20),
+    axis.title.x = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 20),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    panel.background = element_rect(fill = '#fff7ef00'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank()
+  )
+
+bin_n50
+ggsave("graphs/nfmag/bin_n50.png", bin_n50)
 
 ```
