@@ -23,14 +23,20 @@ source("taxprofiler_utils.r")
 ```{r prepare_taxonomizr_db}
 
 # This can take a while, and crashes my pc sometimes... be warned!!
-prepareDatabase('data/accessionTaxa.sql', types = c("nucl_gb", "nucl_wgs"), protocol="http", getAccessions = FALSE)
+# HRGMv2 uses custom taxIDs, not NCBI ones, so:
+# I simply generated data/accessionTaxa.sql first (NCBI TaxIDs)
+# then I replaced nodes.dmp and names.dmp with the ones from HRGMv2 website 
+# then re-ran the command below for data/accessionTaxaHRGM2.sql (removed types=c(...))
+prepareDatabase('data/accessionTaxaHRGM2.sql', protocol="http", getAccessions = FALSE)
 
 ```
-
 
 ```{r get_abundances}
 
 bracken_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken_loma", all_taxa=FALSE, tsv=TRUE) %>%
+  remove_absent_taxa()
+
+bracken_hrgm2_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/raman/bracken_hrgm2_loma", all_taxa=FALSE, tsv=TRUE) %>%
   remove_absent_taxa()
 
 #centrifuger_abundances <- get_centrifuge_taxids_and_abundances("data/taxprofiler/raman/centrifuger", taxrank = "species", all_taxa=FALSE) %>%
@@ -41,11 +47,66 @@ cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/r
 
 ```
 
+```{r compile_abundances}
+
+colnames(bracken_abundances)[1] <- "taxID"
+colnames(bracken_hrgm2_abundances)[1] <- "taxID"
+#centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
+cfgr_kreport_abundances$taxID <- as.character(cfgr_kreport_abundances$taxID)
+
+ncbi_abundances <- rbind(
+    bracken_abundances %>% add_column(profiler=c("Bracken")),
+    cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger"))
+)
+
+ncbi_abundances$taxID <- as.character(ncbi_abundances$taxID)
+
+taxonomy <- getTaxonomy(unique(ncbi_abundances$taxID), 'data/accessionTaxa.sql') %>% 
+  data.frame() %>%
+  add_column(taxID=as.character(unique(ncbi_abundances$taxID)))
+
+hrgm2_taxonomy <- getTaxonomy(unique(bracken_hrgm2_abundances$taxID), 'data/accessionTaxaHRGM2.sql') %>%
+  data.frame() %>%
+  add_column(taxID=as.character(unique(bracken_hrgm2_abundances$taxID))) %>%
+  mutate(domain=str_replace_all(domain, c("d__"=""))) %>%
+  mutate(phylum=str_replace_all(phylum, c("s_A"="s", "s_B"="s", "s_C"="s", "_I"="", "p__"="", "Firmicutes"="Bacillota", "Proteobacteria"="Pseudomonadota", "Actinobacteriota"="Actinomycetota", "Bacteroidetes"="Bacteroidota"))) %>%
+  mutate(class=str_replace_all(class, c("c__"=""))) %>%
+  mutate(order=str_replace_all(order, c("o__"=""))) %>%
+  mutate(family=str_replace_all(family, c("f__"=""))) %>%
+  mutate(genus=str_replace_all(genus, c("g__"=""))) %>%
+  mutate(species=str_replace_all(species, c("s__"="")))
+
+taxonomy$domain[is.na(taxonomy$domain)] <- "Viruses, etc."
+hrgm2_taxonomy$domain[is.na(hrgm2_taxonomy$domain)] <- "Viruses, etc."
+
+ncbi_abundances_with_taxonomy <- left_join(
+  ncbi_abundances,
+  taxonomy,
+  by="taxID"
+)
+
+hrgm2_abundances_with_taxonomy <- left_join(
+  bracken_hrgm2_abundances %>% add_column(profiler=c("Bracken (HRGM2)")),
+  hrgm2_taxonomy,
+  by="taxID"
+)
+
+abundances_with_taxonomy <- rbind(
+  ncbi_abundances_with_taxonomy,
+  hrgm2_abundances_with_taxonomy
+)
+
+colnames(abundances_with_taxonomy) <- gsub("Abundance \\(RAMAN_", "", colnames(abundances_with_taxonomy))
+colnames(abundances_with_taxonomy) <- gsub("\\)", "", colnames(abundances_with_taxonomy))
+
+```
+
 ```{r get_alpha_diversity}
 
 # Data in "long" format
 alpha_diversity <- rbind(
   get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken")),
+  get_alpha_diversity_from_reports(bracken_hrgm2_abundances) %>% add_column(profiler=c("Bracken (HRGM2)")),
   get_alpha_diversity_from_reports(cfgr_kreport_abundances) %>% add_column(profiler=c("Centrifuger"))
 )
 
@@ -60,13 +121,14 @@ alpha_diversity$SampleName <- gsub("\\)", "", alpha_diversity$SampleName)
 ```{r compare_richness_between_profilers}
 
 colnames(bracken_abundances)[1] <- "taxID"
+colnames(bracken_hrgm2_abundances)[1] <- "taxID"
 #centrifuger_abundances$taxID <- as.character(centrifuger_abundances$taxID)
 cfgr_kreport_abundances$taxID <- as.character(cfgr_kreport_abundances$taxID)
 
 all_abundances <- full_join(
-  bracken_abundances %>% add_column(profiler=c("Bracken")),
-  cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger")),
-  by = "taxID")# %>% full_join(cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger_NT")), by="taxID")
+    bracken_abundances %>% add_column(profiler=c("Bracken")),
+    cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger")), 
+    by="taxID")
 
 shared_abundances <- inner_join(
   bracken_abundances %>% add_column(profiler=c("Bracken")),
@@ -84,31 +146,15 @@ ggsave("graphs/taxprofiler/shannon_compare.png", shannon_compare)
 
 ```{r compare_phyla}
 
-taxonomy <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
-  data.frame() %>%
-  add_column(taxID=all_abundances$taxID)
-
-taxonomy$domain[is.na(taxonomy$domain)] <- "Viruses, etc."
-
-phyla_taxids <- taxonomy[, c(2, 8)]
-
-# Oh God, it's all hard-coded... 
-
-all_abundances_with_phyla <- inner_join(all_abundances, phyla_taxids, by="taxID")
-all_abundances_with_phyla[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_phyla[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
-
-phyla_proportions <- aggregate(. ~ phylum, all_abundances_with_phyla[, -c(1, 8, 15)], sum, na.rm = TRUE)
-
-bracken_phyla_proportions <- phyla_proportions[,c(1:7)]
-colnames(bracken_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007", "R012", "R018")
-
-cfgr_kreport_phyla_proportions <- phyla_proportions[,c(1, 8:13)]
-colnames(cfgr_kreport_phyla_proportions) <- c("phylum", "R003", "R004", "R005", "R007", "R012", "R018")
-
-phyla_proportions <- rbind(
-  bracken_phyla_proportions %>% add_column(profiler=c("Bracken")),
-  cfgr_kreport_phyla_proportions %>% add_column(profiler=c("Centrifuger"))
-  ) %>% 
+phyla_proportions <- aggregate(. ~ phylum + profiler, abundances_with_taxonomy[, c(
+  "R003",
+  "R004",
+  "R005",
+  "R007",
+  "R012",
+  "R018",
+  "profiler",
+  "phylum")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 remainder <- aggregate(. ~ profiler+name, phyla_proportions[phyla_proportions$value <= 0.01,][, -c(1)], sum) %>%
@@ -126,7 +172,7 @@ compare_phyla <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phylum)) +
   ylab("") +
   labs(fill = "Phylum") +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
-  scale_fill_brewer(palette = "Set3") +
+  #scale_fill_brewer(palette = "Set3") +
   theme_classic() +
   theme(
     axis.text.y = element_markdown(face="bold", size = 20),
@@ -545,18 +591,23 @@ speciess <- taxonomy[, c(7, 8)]
 # Oh God, it's all hard-coded... 
 
 all_abundances_with_species <- inner_join(all_abundances, speciess, by="taxID")
-all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
+all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21)][is.na(all_abundances_with_species[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21)])] <- 0
 
-species_proportions <- aggregate(. ~ species, all_abundances_with_species[, -c(1, 8, 15)], sum, na.rm = TRUE)
+species_proportions <- aggregate(. ~ species, all_abundances_with_species[, -c(1, 8, 15, 22)], sum, na.rm = TRUE)
 
-centrifuger_species_proportions <- species_proportions[,c(1, 8:13)]
+centrifuger_species_proportions <- species_proportions[,c(1, 14:19)]
 colnames(centrifuger_species_proportions) <- c("species", "R003", "R004", "R005", "R007", "R012", "R018")
 
 bracken_species_proportions <- species_proportions[,c(1:7)]
 colnames(bracken_species_proportions) <- c("species", "R003", "R004", "R005", "R007", "R012", "R018")
 
+bracken_hrgm2_species_proportions <- species_proportions[,c(1, 8:13)]
+colnames(bracken_hrgm2_species_proportions) <- c("species", "R003", "R004", "R005", "R007", "R012", "R018")
+
+
 species_proportions <- rbind(
   bracken_species_proportions %>% add_column(profiler=c("Bracken")),
+  bracken_hrgm2_species_proportions %>% add_column(profiler=c("Bracken (HRGM2)")),
   centrifuger_species_proportions %>% add_column(profiler=c("Centrifuger"))
   ) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
