@@ -226,31 +226,15 @@ compare_phyla_thesis
 
 ```{r compare_domains}
 
-domains <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
-  data.frame() %>%
-  add_column(taxID=all_abundances$taxID)
-
-domains$domain[is.na(domains$domain)] <- "Other"
-
-domains <- domains[, c(1, 8)]
-
-# Oh God, it's all hard-coded... 
-
-all_abundances_with_domains <- inner_join(all_abundances, domains, by="taxID")
-all_abundances_with_domains[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_domains[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
-
-domain_proportions <- aggregate(. ~ domain, all_abundances_with_domains[, -c(1, 8, 15)], sum, na.rm = TRUE)
-
-centrifuger_domain_proportions <- domain_proportions[,c(1, 8:13)]
-colnames(centrifuger_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007", "R012", "R018")
-
-bracken_domain_proportions <- domain_proportions[,c(1:7)]
-colnames(bracken_domain_proportions) <- c("domain", "R003", "R004", "R005", "R007", "R012", "R018")
-
-domain_proportions <- rbind(
-  bracken_domain_proportions %>% add_column(profiler=c("Bracken")),
-  centrifuger_domain_proportions %>% add_column(profiler=c("Centrifuger"))
-  ) %>% 
+domain_proportions <- aggregate(. ~ domain + profiler, abundances_with_taxonomy[, c(
+  "R003",
+  "R004",
+  "R005",
+  "R007",
+  "R012",
+  "R018",
+  "profiler",
+  "domain")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 compare_domains <- ggplot(domain_proportions, aes(x=name, y=value, fill=domain)) + 
@@ -314,31 +298,15 @@ compare_domains_thesis
 
 ```{r compare_class}
 
-#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
-#  data.frame() %>%
-#  add_column(taxID=all_abundances$taxID)
-
-#classes$class[is.na(classes$class)] <- "Other"
-
-classes <- taxonomy[, c(3, 8)]
-
-# Oh God, it's all hard-coded... 
-
-all_abundances_with_classes <- inner_join(all_abundances, classes, by="taxID")
-all_abundances_with_classes[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_classes[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
-
-classes_proportions <- aggregate(. ~ class, all_abundances_with_classes[, -c(1, 8, 15)], sum, na.rm = TRUE)
-
-centrifuger_classes_proportions <- classes_proportions[,c(1, 8:13)]
-colnames(centrifuger_classes_proportions) <- c("class", "R003", "R004", "R005", "R007", "R012", "R018")
-
-bracken_classes_proportions <- classes_proportions[,c(1:7)]
-colnames(bracken_classes_proportions) <- c("class", "R003", "R004", "R005", "R007", "R012", "R018")
-
-classes_proportions <- rbind(
-  bracken_classes_proportions %>% add_column(profiler=c("Bracken")),
-  centrifuger_classes_proportions %>% add_column(profiler=c("Centrifuger"))
-  ) %>% 
+classes_proportions <- aggregate(. ~ class + profiler, abundances_with_taxonomy[, c(
+  "R003",
+  "R004",
+  "R005",
+  "R007",
+  "R012",
+  "R018",
+  "profiler",
+  "class")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 remainder <- aggregate(. ~ profiler+name, classes_proportions[classes_proportions$value <= 0.015,][, -c(1)], sum) %>%
@@ -380,31 +348,15 @@ compare_classes
 
 ```{r compare_order}
 
-#classes <- getTaxonomy(all_abundances$taxID, 'data/accessionTaxa.sql') %>% 
-#  data.frame() %>%
-#  add_column(taxID=all_abundances$taxID)
-
-#classes$class[is.na(classes$class)] <- "Other"
-
-orders <- taxonomy[, c(4, 8)]
-
-# Oh God, it's all hard-coded... 
-
-all_abundances_with_orders <- inner_join(all_abundances, orders, by="taxID")
-all_abundances_with_orders[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)][is.na(all_abundances_with_orders[, c(2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14)])] <- 0
-
-orders_proportions <- aggregate(. ~ order, all_abundances_with_orders[, -c(1, 8, 15)], sum, na.rm = TRUE)
-
-centrifuger_orders_proportions <- orders_proportions[,c(1, 8:13)]
-colnames(centrifuger_orders_proportions) <- c("order", "R003", "R004", "R005", "R007", "R012", "R018")
-
-bracken_orders_proportions <- orders_proportions[,c(1:7)]
-colnames(bracken_orders_proportions) <- c("order", "R003", "R004", "R005", "R007", "R012", "R018")
-
-orders_proportions <- rbind(
-  bracken_orders_proportions %>% add_column(profiler=c("Bracken")),
-  centrifuger_orders_proportions %>% add_column(profiler=c("Centrifuger"))
-  ) %>% 
+orders_proportions <- aggregate(. ~ order + profiler, abundances_with_taxonomy[, c(
+  "R003",
+  "R004",
+  "R005",
+  "R007",
+  "R012",
+  "R018",
+  "profiler",
+  "order")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.00,][, -c(1)], sum) %>%
