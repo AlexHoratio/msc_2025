@@ -182,7 +182,7 @@ ggsave("graphs/nfmag/bin_n50.png", bin_n50)
 
 dastool_gtdb_abundances <- inner_join(
   abundances_with_taxonomy,
-  dastool_gtdb %>% rename_at('Species', ~'species'),
+  dastool_gtdb %>% rename_at('Species',),
   by="species"
 )
 
