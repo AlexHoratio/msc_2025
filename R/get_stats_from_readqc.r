@@ -67,7 +67,7 @@ format_si <- function(...) {
     i <- ifelse(i==0, which(limits == 1e0), i)
     
     paste(format(round(x/limits[i], 1),
-                 trim=TRUE, scientific=FALSE, ...),
+                 trim=TRUE, scientific=FALSE, drop0trailing = TRUE, ...),
           prefix[i])
   }
 }

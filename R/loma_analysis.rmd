@@ -36,7 +36,8 @@ We need...
 
 read_statistics <- get_tsv_from_run_folder("/data/loma/RUN01_raman/")
 read_statistics <- read_statistics %>%
-  mutate(mean_bin_bp = total_binned_bp/bin_count)
+  mutate(mean_bin_bp = total_binned_bp/bin_count) %>%
+  mutate(run_accession = str_extract(run_accession, "[R]+[0-9]+"))
 
 ```
 
@@ -226,10 +227,10 @@ binning_panel
 ```{r number_of_bins}
 
 
-number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, fill = run_accession)) + 
-  geom_bar(stat="identity", colour = "black") +
-  geom_text(label = read_statistics$bin_count, size = 10, vjust = -0.2) +
-  scale_fill_brewer(palette = "Set1") +
+number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count)) + 
+  geom_bar(stat="identity", colour = "black", show.legend = FALSE, fill="grey") +
+  geom_text(label = read_statistics$bin_count, size = 6, vjust = -0.2) +
+#  scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
   ylab("Total \\# of Genome Bins") +
   xlab("") +
@@ -237,7 +238,7 @@ number_of_bins <- ggplot(read_statistics, aes(x = run_accession, y = bin_count, 
   theme_classic() +
   theme(
     axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 20),
+    axis.text.x = element_markdown(size = 14),
     axis.title.x = element_markdown(size = 20),
     axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
@@ -290,10 +291,10 @@ ggsave("graphs/loma/number_of_contigs.png", number_of_contigs)
 ```{r bin_n50}
 
 
-bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_n50/1000), fill = run_accession)) + 
-  geom_bar(stat="identity", show.legend = TRUE, colour="black") +
+bin_n50 <- ggplot(read_statistics[Complete > 50, ], aes(x = run_accession, y = round(average_bin_n50/1000))) + 
+  geom_bar(stat="identity", show.legend = FALSE, colour="black", fill="grey") +
   geom_text(label = round(read_statistics$average_bin_n50/1000), size = 6, vjust = -0.2) +
-  scale_fill_brewer(palette = "Set1") +
+#  scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
   scale_y_continuous(labels = format_si()) +
   ylab("Average Bin N50 (Kbp)") +
@@ -302,7 +303,7 @@ bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_
   theme_classic() +
   theme(
     axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 20),
+    axis.text.x = element_markdown(size = 14),
     axis.title.x = element_markdown(size = 10),
     axis.title.y = element_markdown(size = 20),
     panel.spacing = unit(1, "lines"),
@@ -316,6 +317,15 @@ bin_n50 <- ggplot(read_statistics, aes(x = run_accession, y = round(average_bin_
 
 bin_n50
 ggsave("graphs/loma/bin_n50.png", bin_n50)
+
+```
+
+```{r number_of_bins_and_n50_panel}
+
+number_of_bins_and_n50_panel <- plot_grid(number_of_bins, bin_n50, labels = c("A", "B"), rel_widths = c(1, 1))
+
+ggsave("graphs/loma/number_of_bins_and_n50_panel.png", number_of_bins_and_n50_panel, units = "px", width=2800, height=1200)
+number_of_bins_and_n50_panel
 
 ```
 
