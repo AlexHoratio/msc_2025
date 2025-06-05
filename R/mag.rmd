@@ -333,8 +333,325 @@ mags_compare_phyla
 
 ```
 
+```{r get_coverm}
+
+coverm_summaries <- data.frame()
+
+for (filename in list.files("data/coverm/FLYE")) {
+  if (length(coverm_summaries) == 0) {
+    coverm_summaries <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    colnames(coverm_summaries) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
+    coverm_summaries$Genome[which(coverm_summaries$Genome == "unmapped")] <- paste0("unmapped_", filename)
+  } else {
+    summary <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    colnames(summary) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
+    summary$Genome[which(summary$Genome == "unmapped")] <- paste0("unmapped_", filename)
+    coverm_summaries <- rbind(coverm_summaries, summary)
+  }
+}
+
+for (filename in list.files("data/coverm/METAMDBG")) {
+  if (length(coverm_summaries) == 0) {
+    coverm_summaries <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    colnames(coverm_summaries) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
+    coverm_summaries$Genome[which(coverm_summaries$Genome == "unmapped")] <- paste0("unmapped_", filename)
+  } else {
+    summary <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    colnames(summary) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
+    summary$Genome[which(summary$Genome == "unmapped")] <- paste0("unmapped_", filename)
+    coverm_summaries <- rbind(coverm_summaries, summary)
+  }
+}
+
+coverm_summaries <- coverm_summaries %>%
+  mutate(SampleName=str_extract(Genome, "[R]+[0-9]+")) %>%
+  mutate(Bin=str_extract(Genome, "(?<=\\.)[0-9]+")) %>%
+  mutate(Assembler=str_extract(Genome, "FLYE|METAMDBG")) %>%
+  mutate(Binner=str_extract(Genome, "MetaBAT2|MaxBin2")) %>%
+  subset(select = -c(`Genome`))
+
+coverm_gtdb <- left_join(coverm_summaries, dastool_gtdb, by = c("SampleName", "Bin", "Assembler", "Binner"))
+
+```
+
+```{r domain_compare}
+
+names(coverm_gtdb)[names(coverm_gtdb) == "Kingdom"] <- "Domain"
+
+kmer_domain_proportions <- domain_proportions 
+colnames(kmer_domain_proportions) <- c("Domain", "Assembler", "SampleName", "Relative Abundance") 
+kmer_domain_proportions <- kmer_domain_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_domain_proportions <- coverm_gtdb[, c("Domain", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  aggregate(. ~ Domain + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_domain_proportions)
+
+coverm_domains <- ggplot(all_domain_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Domain`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>MAG and k-mer-based taxonomy, by Phylum</b>") +
+  labs(fill = "Domain") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 10),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_domains
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_domains)), "graphs/plotly/domain.html")
+
+```
+
 ```{r phylum_compare}
 
+kmer_phyla_proportions <- phyla_proportions 
+colnames(kmer_phyla_proportions) <- c("Phylum", "Assembler", "SampleName", "Relative Abundance") 
+kmer_phyla_proportions <- kmer_phyla_proportions %>%
+  add_column(Approach = c("K-mers"))
 
+all_phyla_proportions <- coverm_gtdb[, c("Phylum", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  aggregate(. ~ Phylum + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_phyla_proportions)
+
+coverm_phyla <- ggplot(all_phyla_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Phylum`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>MAG and k-mer-based taxonomy, by Phylum</b>") +
+  labs(fill = "Phylum") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(size = 10),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_phyla
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_phyla)), "graphs/plotly/phylum.html")
+
+```
+
+```{r class_compare}
+
+kmer_class_proportions <- classes_proportions 
+colnames(kmer_class_proportions) <- c("Class", "Assembler", "SampleName", "Relative Abundance") 
+kmer_class_proportions <- kmer_class_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_class_proportions <- coverm_gtdb[, c("Class", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  aggregate(. ~ Class + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_class_proportions)
+
+coverm_class <- ggplot(all_class_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Class`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>Relative Abundance of MAGs, by Class</b>") +
+  labs(fill = "Class") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 14),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_class
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_class)), "graphs/plotly/class.html")
+
+```
+
+```{r order_compare}
+
+kmer_order_proportions <- orders_proportions 
+colnames(kmer_order_proportions) <- c("Order", "Assembler", "SampleName", "Relative Abundance") 
+kmer_order_proportions <- kmer_order_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_order_proportions <- coverm_gtdb[, c("Order", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  aggregate(. ~ Order + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_order_proportions)
+
+coverm_order <- ggplot(all_order_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Order`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+ # ggtitle("<b>Relative Abundance of MAGs, by Order</b>") +
+  labs(fill = "Order") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 14),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_order
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_order)), "graphs/plotly/order.html")
+
+```
+
+```{r family_compare}
+
+kmer_family_proportions <- families_proportions 
+colnames(kmer_family_proportions) <- c("Family", "Assembler", "SampleName", "Relative Abundance") 
+kmer_family_proportions <- kmer_family_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_family_proportions <- coverm_gtdb[, c("Family", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  filter(Family != "") %>%
+  aggregate(. ~ Family + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_family_proportions)
+
+coverm_family <- ggplot(all_family_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Family`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>Relative Abundance of MAGs, by Family</b>") +
+  labs(fill = "Family") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 14),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_family
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_family)), "graphs/plotly/family.html")
+
+```
+
+
+```{r genus_compare}
+
+kmer_genus_proportions <- genus_proportions 
+colnames(kmer_genus_proportions) <- c("Genus", "Assembler", "SampleName", "Relative Abundance") 
+kmer_genus_proportions <- kmer_genus_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_genus_proportions <- coverm_gtdb[, c("Genus", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  filter(Genus != "") %>%
+  filter(Genus != " ") %>%
+  aggregate(. ~ Genus + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_genus_proportions)
+
+coverm_genus <- ggplot(all_genus_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Genus`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>Relative Abundance of MAGs, by Genus</b>") +
+  labs(fill = "Genus") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 14),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_genus
+plotly_build(coverm_genus)
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_genus)), "graphs/plotly/genus.html")
+
+```
+
+```{r species_compare}
+
+kmer_species_proportions <- species_proportions 
+colnames(kmer_species_proportions) <- c("Species", "Assembler", "SampleName", "Relative Abundance") 
+kmer_species_proportions <- kmer_species_proportions %>%
+  add_column(Approach = c("K-mers"))
+
+all_species_proportions <- coverm_gtdb[, c("Species", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  filter(str_trim(Species) != "") %>%
+  aggregate(. ~ Species + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs")) %>% 
+  rbind(kmer_species_proportions)
+
+coverm_species <- ggplot(all_species_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Species`)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  facet_wrap(~ SampleName) + 
+  coord_flip() +
+  xlab("") +
+  ylab("") +
+  #ggtitle("<b>Relative Abundance of MAGs, by Species</b>") +
+  labs(fill = "Species") +
+  scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_markdown(face="bold", size = 14),
+    axis.text.x = element_markdown(size = 12),
+    plot.title = element_markdown(hjust = 0.5),
+    panel.spacing = unit(1, "lines"),
+    strip.text = element_markdown(face = "bold", size = 12),
+    legend.margin = margin(l = -20, t = -20),
+    legend.text = element_markdown(size = 12),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+  )
+
+coverm_species
+#plotly_build(coverm_species)
+htmlwidgets::saveWidget(as_widget(plotly_build(coverm_species)), "graphs/plotly/species.html")
 
 ```

@@ -45,6 +45,9 @@ bracken_hrgm2_abundances <- get_bracken_taxids_and_abundances("data/taxprofiler/
 cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/raman/centrifuger_loma", taxrank="S", all_taxa=FALSE) %>%
   remove_absent_taxa()
 
+metaphlan_prodigal_abundances <- get_metaphlan_names_and_abundances("data/humann/prodigal") %>%
+  remove_absent_taxa()
+
 ```
 
 ```{r compile_abundances}
@@ -55,8 +58,8 @@ colnames(bracken_hrgm2_abundances)[1] <- "taxID"
 cfgr_kreport_abundances$taxID <- as.character(cfgr_kreport_abundances$taxID)
 
 ncbi_abundances <- rbind(
-    bracken_abundances %>% add_column(profiler=c("Bracken")),
-    cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger"))
+    bracken_abundances %>% add_column(profiler=c("Bracken (PlusPF)")),
+    cfgr_kreport_abundances %>% add_column(profiler=c("Centrifuger (NCBI nt/nr)"))
 )
 
 ncbi_abundances$taxID <- as.character(ncbi_abundances$taxID)
@@ -91,6 +94,23 @@ hrgm2_abundances_with_taxonomy <- left_join(
   by="taxID"
 )
 
+metaphlan_prodigal_abundances_with_taxonomy <- filter(metaphlan_prodigal_abundances, grepl("t__", metaphlan_prodigal_abundances$name)) %>%
+  mutate(domain = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 1), c("k__"=""))) %>% relocate(`domain`, .before = c(1)) %>%
+  mutate(phylum = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 2), c("p__"=""))) %>% relocate(`phylum`, .before = c(2)) %>%
+  mutate(phylum=str_replace_all(phylum, c("s_A"="s", "s_B"="s", "s_C"="s", "_I"="", "p__"="", "Firmicutes"="Bacillota", "Proteobacteria"="Pseudomonadota", "Actinobacteriota"="Actinomycetota", "Bacteroidetes"="Bacteroidota"))) %>%
+  mutate(class = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 3), c("c__"=""))) %>% relocate(`class`, .before = c(3)) %>%
+  mutate(order = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 4), c("o__"=""))) %>% relocate(`order`, .before = c(4)) %>%
+  mutate(family = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 5), c("f__"=""))) %>% relocate(`family`, .before = c(5)) %>%
+  mutate(genus = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 6), c("g__"=""))) %>% relocate(`genus`, .before = c(6)) %>%
+  mutate(species = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 7), c("s__"=""))) %>% relocate(`species`, .before = c(7)) %>%
+  subset(select = -c(`name`)) %>%
+  add_column(profiler = c("MetaPhlAn (Prodigal)")) %>%
+  add_column(taxID = c(0))
+
+metaphlan_prodigal_abundances_with_taxonomy <- metaphlan_prodigal_abundances_with_taxonomy %>%
+  add_column(R003 = c(0)) %>%
+  add_column(R007 = c(0))
+
 abundances_with_taxonomy <- rbind(
   ncbi_abundances_with_taxonomy,
   hrgm2_abundances_with_taxonomy
@@ -99,15 +119,20 @@ abundances_with_taxonomy <- rbind(
 colnames(abundances_with_taxonomy) <- gsub("Abundance \\(RAMAN_", "", colnames(abundances_with_taxonomy))
 colnames(abundances_with_taxonomy) <- gsub("\\)", "", colnames(abundances_with_taxonomy))
 
+abundances_with_taxonomy <- rbind(
+  abundances_with_taxonomy, 
+  metaphlan_prodigal_abundances_with_taxonomy
+)
+
 ```
 
 ```{r get_alpha_diversity}
 
 # Data in "long" format
 alpha_diversity <- rbind(
-  get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken")),
+  get_alpha_diversity_from_reports(bracken_abundances) %>% add_column(profiler=c("Bracken (PlusPF)")),
   #get_alpha_diversity_from_reports(bracken_hrgm2_abundances) %>% add_column(profiler=c("Bracken (HRGM2)")),
-  get_alpha_diversity_from_reports(cfgr_kreport_abundances) %>% add_column(profiler=c("Centrifuger"))
+  get_alpha_diversity_from_reports(cfgr_kreport_abundances) %>% add_column(profiler=c("Centrifuger (NCBI nt/nr)"))
 )
 
 alpha_diversity$SampleName <- gsub("Abundance \\(RAMAN_", "", alpha_diversity$SampleName)
@@ -218,7 +243,7 @@ compare_phyla_thesis <- ggplot(phyla_proportions, aes(x=name, y=value, fill=phyl
   #ggtitle("<b>Distribution of Phyla</b> (k-mer classification)") +
   labs(fill = "Phylum") +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
-  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((phyla_proportions$phylum))))) +
+  #scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((phyla_proportions$phylum))))) +
   theme_classic() +
   guides(fill = guide_legend(ncol = 4)) +
   theme(
@@ -374,11 +399,11 @@ orders_proportions <- aggregate(. ~ order + profiler, abundances_with_taxonomy[,
   "order")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.00,][, -c(1)], sum) %>%
-  add_column(order=c("<1.5% Orders"))
+remainder <- aggregate(. ~ profiler+name, orders_proportions[orders_proportions$value <= 0.005,][, -c(1)], sum) %>%
+  add_column(order=c("<0.5% Orders"))
 
 orders_proportions <- orders_proportions %>%
-  filter(value > c(0.00)) %>%
+  filter(value > c(0.005)) %>%
   rbind(remainder)
 
 compare_orders <- ggplot(orders_proportions, aes(x=name, y=value, fill=order)) + 
@@ -426,7 +451,7 @@ families_proportions <- aggregate(. ~ family + profiler, abundances_with_taxonom
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
 remainder <- aggregate(. ~ profiler+name, families_proportions[families_proportions$value <= 0.005,][, -c(1)], sum) %>%
-  add_column(family=c("<1% Families"))
+  add_column(family=c("<0.5% Families"))
 
 families_proportions <- families_proportions %>%
   filter(value > c(0.005)) %>%
@@ -476,11 +501,11 @@ genus_proportions <- aggregate(. ~ genus + profiler, abundances_with_taxonomy[, 
   "genus")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, genus_proportions[genus_proportions$value <= 0.03,][, -c(1)], sum) %>%
-  add_column(genus=c("<3% Genuses"))
+remainder <- aggregate(. ~ profiler+name, genus_proportions[genus_proportions$value <= 0.01,][, -c(1)], sum) %>%
+  add_column(genus=c("<1% Genuses"))
 
 genus_proportions <- genus_proportions %>%
-  filter(value > c(0.03)) %>%
+  filter(value > c(0.01)) %>%
   rbind(remainder)
 
 width_scale <- 12 * 26 / length(unique(genus_proportions$genus))
@@ -526,11 +551,11 @@ species_proportions <- aggregate(. ~ species + profiler, abundances_with_taxonom
   "species")], sum, na.rm = TRUE) %>% 
   pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
 
-remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.05,][, -c(1)], sum) %>%
-  add_column(species=c("<5% Species"))
+remainder <- aggregate(. ~ profiler+name, species_proportions[species_proportions$value <= 0.01,][, -c(1)], sum) %>%
+  add_column(species=c("<1% Species"))
 
 species_proportions <- species_proportions %>%
-  filter(value > c(0.05)) %>%
+  filter(value > c(0.01)) %>%
   rbind(remainder)
 
 compare_species <- ggplot(species_proportions, aes(x=name, y=value, fill=species)) + 

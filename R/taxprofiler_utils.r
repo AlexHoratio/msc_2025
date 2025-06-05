@@ -211,6 +211,36 @@ get_kreport_taxids_and_abundances <- function(folder_path, taxrank="S", all_taxa
   return(all_reports)
 }
 
+# not using taxids because some of the ChocoPhlAn organisms do not match to unique NCBI taxids
+# however we only use the taxids to get names anyway!
+get_metaphlan_names_and_abundances <- function(folder_path) {
+  filenames <- Sys.glob(paste0(folder_path, "/*metaphlan_bugs_list.tsv"))
+  
+  all_reports <- tibble()
+  
+  for (f in filenames) {
+    metaphlan_file <- read_tsv(f, col_names=TRUE, skip = 4)
+    
+    if (nrow(all_reports) != 0L) {
+      subset_file <- metaphlan_file[, c(1, 3)]
+      subset_file[, c(2)] = as.numeric(unlist(subset_file[, c(2)], use.names=FALSE)) / 100.0
+      
+      names(subset_file) <- c("name", str_extract(f, "[R]+[0-9]+"))
+      
+      all_reports <- full_join(all_reports, subset_file, by = "name")
+      
+    } else {
+      all_reports <- metaphlan_file[, c(1, 3)]
+      all_reports[, c(2)] = as.numeric(unlist(all_reports[, c(2)], use.names=FALSE)) / 100.0
+      
+      names(all_reports) <- c("name", str_extract(f, "[R]+[0-9]+"))
+    }
+  }
+  
+  return(all_reports)
+  
+}
+
 # Does this need to be declared on its own? ...
 gt_zero <- function(x) { return(x > 0 & !is.na(x)) }
 
