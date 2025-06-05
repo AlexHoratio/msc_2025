@@ -339,11 +339,11 @@ coverm_summaries <- data.frame()
 
 for (filename in list.files("data/coverm/FLYE")) {
   if (length(coverm_summaries) == 0) {
-    coverm_summaries <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    coverm_summaries <- read_tsv(paste0("data/coverm/FLYE/", filename), col_names = TRUE)
     colnames(coverm_summaries) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
     coverm_summaries$Genome[which(coverm_summaries$Genome == "unmapped")] <- paste0("unmapped_", filename)
   } else {
-    summary <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    summary <- read_tsv(paste0("data/coverm/FLYE/", filename), col_names = TRUE)
     colnames(summary) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
     summary$Genome[which(summary$Genome == "unmapped")] <- paste0("unmapped_", filename)
     coverm_summaries <- rbind(coverm_summaries, summary)
@@ -352,11 +352,11 @@ for (filename in list.files("data/coverm/FLYE")) {
 
 for (filename in list.files("data/coverm/METAMDBG")) {
   if (length(coverm_summaries) == 0) {
-    coverm_summaries <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    coverm_summaries <- read_tsv(paste0("data/coverm/METAMDBG/", filename), col_names = TRUE)
     colnames(coverm_summaries) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
     coverm_summaries$Genome[which(coverm_summaries$Genome == "unmapped")] <- paste0("unmapped_", filename)
   } else {
-    summary <- read_tsv(paste0("data/coverm/", filename), col_names = TRUE)
+    summary <- read_tsv(paste0("data/coverm/METAMDBG/", filename), col_names = TRUE)
     colnames(summary) <- c("Genome", "Relative Abundance", "Mean", "Trimmed Mean", "Covered Bases", "Variance")
     summary$Genome[which(summary$Genome == "unmapped")] <- paste0("unmapped_", filename)
     coverm_summaries <- rbind(coverm_summaries, summary)
