@@ -1,0 +1,64 @@
+path <- "data/"
+fastqseqs <- list.files(path, pattern = ".fastq.gz")
+
+fnFs <- fastqseqs[grepl(".R1.fastq.gz", fastqseqs)]
+fnRs <- fastqseqs[grepl(".R2.fastq.gz", fastqseqs)]
+
+sample.names <- sapply(strsplit(fnFs, ".R1.fastq.gz"), `[`, 1)
+
+fnFs <- file.path(path, fnFs)
+fnRs <- file.path(path, fnRs)
+
+filt_path <- file.path(path, "filtered") 
+
+filtFs <- file.path(filt_path, paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(filt_path, paste0(sample.names, "_R_filt.fastq.gz"))
+
+# Filter and trim
+out <- filterAndTrim(fnFs, 
+                     filtFs, 
+                     fnRs,
+                     filtRs, 
+                     truncLen=c(200,140),
+                     trimLeft=c(30, 30), 
+                     maxN=0,
+                     maxEE=c(2,2),
+                     truncQ=11,
+                     rm.phix=TRUE,
+                     compress=TRUE,
+                     multithread=TRUE)
+
+# Learn errors
+set.seed(12345)
+errF <- learnErrors(filtFs, nbases=1e7, multithread=TRUE) 
+errR <- learnErrors(filtRs, nbases=1e7,multithread=TRUE)
+
+# Denoising
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+
+# Merge pairs
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+names(mergers) <- sample.names
+
+# Remove chimera
+seqtab <- makeSequenceTable(mergers)
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+
+# Assign taxonomy
+taxHS <- assignTaxonomy(seqtab.nochim,
+                        refFasta = "data/rdp_train_set_16.fa.gz",
+                        tryRC = T,
+                        multithread=TRUE)
+taxHS <- addSpecies(taxHS, "data/rdp_species_assignment_16.fa.gz", tryRC = T)
+
+colnames(taxHS) <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+
+# Export
+dir.create("output")
+write.table(seqtab.nochim, file = "output/sequence_table_SV.tsv", quote=FALSE)
+write.table(taxHS, file = "output/taxonomy_SV.tsv", quote=FALSE)
+
+# Phyloseq
+ps <- phyloseq(otu_table(seqtab.nochim, taxa_are_rows = F),
+               tax_table(taxHS))

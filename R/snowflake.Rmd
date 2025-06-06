@@ -1,0 +1,243 @@
+---
+title: "Snowflake Demo"
+output: html_document
+---
+
+This document provides an example on how to use snowflake.
+
+### Installation
+
+```{r Install Phyloseq, eval=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(version = "3.20")
+BiocManager::install("phyloseq")
+BiocManager::install("tidyverse")
+
+```
+
+```{r Install Crosstalk, eval=FALSE}
+if (!require("crosstalk", quietly = TRUE))
+  devtools::install_github("rstudio/crosstalk")
+```
+
+```{r load phyloseq}
+library(phyloseq)
+```
+
+```{r Load Snowflake, message=FALSE, warning=FALSE}
+devtools::load_all(path = "../snowflake-master")
+```
+
+### Import Data
+
+We load the ASV table and ASV abundance table, reprocessed from 16S rRNA sequences using [Dada2](https://benjjneb.github.io/dada2/).
+
+```{r Import Data}
+asv_table <- read.csv("data/seq_count_table_without_chim.csv",
+                      header = TRUE, sep = ',', row.names = 1)
+taxa <- read.csv("data/ASV_table.csv",
+                 header = TRUE, sep = ",", row.names = 1)
+```
+
+### Create Phyloseq object
+
+```{r Create Phyloseq Object}
+#ps <- phyloseq(otu_table(asv_table, taxa_are_rows=FALSE),
+#               tax_table(as.matrix(taxa)))
+
+#t <- all_abundances[all_abundances$profiler == "Bracken", ]
+t <- hrgm2_abundances_with_taxonomy[hrgm2_abundances_with_taxonomy$profiler == "Bracken (HRGM2)", ]
+
+otumat <- as.matrix(t[, -c(1, 8, 9, 10, 11, 12, 13, 14, 15)])
+rownames(otumat) <- as.numeric(t$taxID)
+
+otumat <- otumat * 100000
+
+x <- hrgm2_taxonomy[hrgm2_taxonomy$taxID %in% t$taxID, ]
+
+taxmat <- as.matrix(x[, -c(8)])
+colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+rownames(taxmat) <- as.numeric(rownames(x))
+
+ps <- phyloseq(otu_table(otumat, taxa_are_rows=TRUE), tax_table(taxmat))
+
+```
+
+```{r coverm_phyloseq}
+
+coverm_unique_species <- unique(coverm_gtdb[, c(16)])
+coverm_unique_species <- coverm_unique_species[coverm_unique_species$Species != "", ]
+coverm_unique_species <- coverm_unique_species[!is.na(coverm_unique_species$Species), ]
+
+coverm_unique_taxa <- dplyr::inner_join(
+  coverm_unique_species,
+  coverm_gtdb[, c(10, 11, 12, 13, 14, 15, 16)][!duplicated(coverm_gtdb[, c(10, 11, 12, 13, 14, 15, 16)]), ]
+)
+
+
+
+coverm_flye <- coverm_gtdb[coverm_gtdb$Assembler == "METAMDBG", c(1, 6, 16)]
+coverm_flye <- coverm_flye[coverm_flye$Species != "", ]
+coverm_flye <- coverm_flye[!is.na(coverm_flye$Species), ]
+
+coverm_flye <- tidyr::pivot_wider(
+  coverm_flye,
+  names_from = SampleName,
+  values_from = `Relative Abundance`,
+  values_fill = NA,
+  values_fn = sum
+)
+
+coverm_flye <- as.data.frame(coverm_flye)
+
+rownames(coverm_flye) <- coverm_flye[, c(1)]
+coverm_flye <- coverm_flye[, -c(1)]
+coverm_flye[is.na(coverm_flye)] <- 0
+
+otumat <- as.matrix(coverm_flye)
+otumat <- otumat * 100000000
+
+taxmat <- as.matrix(coverm_unique_taxa)
+rownames(taxmat) <- coverm_unique_taxa$Species
+
+#coverm_flye[, -c(1)] <- as.numeric(coverm_flye[, -c(1)])
+
+#rownames(coverm_flye) <- coverm_unique_species
+
+#t <- hrgm2_abundances_with_taxonomy[hrgm2_abundances_with_taxonomy$profiler == "Bracken (HRGM2)", ]
+
+#otumat <- as.matrix(t[, -c(1, 8, 9, 10, 11, 12, 13, 14, 15)])
+#rownames(otumat) <- as.numeric(t$taxID)
+
+#otumat <- otumat * 100000
+
+#x <- hrgm2_taxonomy[hrgm2_taxonomy$taxID %in% t$taxID, ]
+
+#taxmat <- as.matrix(x[, -c(8)])
+#colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+#rownames(taxmat) <- as.numeric(rownames(x))
+
+ps <- phyloseq(otu_table(otumat, taxa_are_rows=TRUE), tax_table(taxmat))
+
+```
+
+```{r}
+
+otumat = matrix(sample(1:100, 100, replace = TRUE), nrow = 10, ncol = 10)
+rownames(otumat) <- paste0("OTU", 1:nrow(otumat))
+colnames(otumat) <- paste0("Sample", 1:ncol(otumat))
+
+taxmat = matrix(sample(letters, 70, replace = TRUE), nrow = nrow(otumat), ncol = 7)
+rownames(taxmat) <- rownames(otumat)
+colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+
+ps <- phyloseq(otu_table(otumat, taxa_are_rows=TRUE), tax_table(taxmat))
+
+plot_bar(ps, fill = "Family")
+```
+
+In case you want to filter taxa...
+
+```{r}
+ps_filtered <- filter_taxa(ps,function(x) mean(x) > 0.0005*100000, TRUE)
+```
+
+### Compose Microbiome Composition Graph
+
+The user provides a phyloseq object and chooses which beta diversity distance metric to be used for downstream analysis (default 'bray'). See phyloseq distance() documentation for a list of metrics to be used. In addition, the user can specify whether he wants the rows and columns of the abundance table to be reordered to reveal possible higher order patterns in the data.
+```{r MC Graph}
+# Default
+mcg <- build_mc_graph(ps_object = ps)
+
+# Specifying a distance metric to be used for beta diversity calculations.
+# mcg <- build_mc_graph(ps_object = ps, beta_dist = "jaccard")
+
+# Adding matrix seriation (optimal leaf ordering)
+# mcg <- build_mc_graph(ps_object = ps, beta_dist = "bray", seriation_method = "OLO")
+```
+
+### Adjacency matrix
+
+The Microbiome Compisition Graph can be displayed using an adjacency matrix. The adjacency matrix's appearance can be changed by the function parameters. See documentation for a more thorough description.
+
+```{r Adjacency-Matrix parameters, eval=FALSE}
+# Default
+adjacencyMatrix(graph_object = mcg)
+
+# Color cells by relative abundance
+adjacencyMatrix(graph_object = mcg, cellColor = "relative")
+
+# Color sample labels by group
+adjacencyMatrix(graph_object = mcg, cellColor = "relative", source_color = "group")
+
+# Disable horizontal brushing
+adjacencyMatrix(graph_object = mcg, cellColor = "relative", columnBrush = FALSE)
+```
+```{r Adjacency-Matrix example, cache=FALSE}
+adjacencyMatrix(graph_object = mcg, cellColor = "relative")
+```
+
+
+### Plot node-link diagram
+
+The Microbiome Composition Graph can be displayed using a node-link diagram. The node-link diagram is driven by a force-directed layout algorithm and its appearance can be changed by the function parameters. See documentation for a more thorough description.
+# Default
+forceGraph(graph_object = mcg)
+
+```{r node-link parameters, eval=FALSE}
+
+fg <- forceGraph(graph_object = mcg, 
+           source_color = "alphaShannon", 
+           target_color = "abundance", 
+           nodeTitle = c("id", "abundance"),
+           linkStroke = "#808080",
+           linkStrokeOpacity = list("relative", "linear", c(0,0.1), c(0.3,.7))
+)
+
+htmlwidgets::saveWidget(fg, "C:\\Users\\horat\\Desktop\\msc_2025\\R\\graphs\\snowflake\\snowflake_coverm_metamdbg.html")
+
+```
+# Color source and target nodes
+forceGraph(graph_object = mcg, source_color = "alphaShannon", target_color = "abundance")
+
+# Set the node attributes to be printed while hovering on a node
+forceGraph(graph_object = mcg, nodeTitle = c("id", "group"))
+
+# Map relative abundance to edge color
+forceGraph(graph_object = mcg, linkStroke = list("relative", "linear", c(0,0.1), c("grey", "blue")))
+
+# Set grouping variable
+forceGraph(graph_object = mcg, groupingVariable = "group")
+
+# Disable highlighting of ASV abundance in samples
+forceGraph(graph_object = mcg, highlightAbundance = FALSE)
+```
+```{r Node-Link example, cache=}
+
+fg <- forceGraph(graph_object = mcg, 
+           source_color = "alphaShannon", 
+           target_color = "abundance", 
+           nodeTitle = c("id", "group", "abundance"),
+           linkStroke = "#808080",
+           linkStrokeOpacity = list("relative", "linear", c(0,0.1), c(0.3,.7))
+)
+
+htmlwidgets::saveWidget(as_widget(fg), "graphs/snowflake/snowflake_bracken_hrgm2.html")
+
+```
+
+
+### Combining node-link diagram and adjacency matrix
+
+When building the `mcg`, a crosstalk object is automatically created on data. Hence plots can be used to interact with each other. One can select samples by clicking their name or zoom in on a certain set of observed taxa using two-dimensional brushing on the adjacency matrix and get an updated view of the node-link diagram. Note, check crosstalk documentation for rearranging the view.
+
+```{r Combined View, echo=FALSE, fig.show='ask', cache=FALSE}
+library(crosstalk)
+bscols(
+    adjacencyMatrix(graph_object = mcg, cellColor = "relative"),
+    forceGraph(graph_object = mcg, source_color = "beta", target_color = "abundance"),
+    widths = c(12,12)
+)
+```
+

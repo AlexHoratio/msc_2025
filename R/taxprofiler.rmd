@@ -48,6 +48,9 @@ cfgr_kreport_abundances <- get_kreport_taxids_and_abundances("data/taxprofiler/r
 metaphlan_prodigal_abundances <- get_metaphlan_names_and_abundances("data/humann/prodigal") %>%
   remove_absent_taxa()
 
+metaphlan_1kbp_shreds_abundances <- get_metaphlan_names_and_abundances("data/humann/shredded_1kbp") %>%
+  remove_absent_taxa()
+
 ```
 
 ```{r compile_abundances}
@@ -107,9 +110,18 @@ metaphlan_prodigal_abundances_with_taxonomy <- filter(metaphlan_prodigal_abundan
   add_column(profiler = c("MetaPhlAn (Prodigal)")) %>%
   add_column(taxID = c(0))
 
-metaphlan_prodigal_abundances_with_taxonomy <- metaphlan_prodigal_abundances_with_taxonomy %>%
-  add_column(R003 = c(0)) %>%
-  add_column(R007 = c(0))
+metaphlan_1kbp_shreds_abundances_with_taxonomy <- filter(metaphlan_1kbp_shreds_abundances, grepl("t__", metaphlan_1kbp_shreds_abundances$name)) %>%
+  mutate(domain = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 1), c("k__"=""))) %>% relocate(`domain`, .before = c(1)) %>%
+  mutate(phylum = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 2), c("p__"=""))) %>% relocate(`phylum`, .before = c(2)) %>%
+  mutate(phylum=str_replace_all(phylum, c("s_A"="s", "s_B"="s", "s_C"="s", "_I"="", "p__"="", "Firmicutes"="Bacillota", "Proteobacteria"="Pseudomonadota", "Actinobacteriota"="Actinomycetota", "Bacteroidetes"="Bacteroidota"))) %>%
+  mutate(class = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 3), c("c__"=""))) %>% relocate(`class`, .before = c(3)) %>%
+  mutate(order = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 4), c("o__"=""))) %>% relocate(`order`, .before = c(4)) %>%
+  mutate(family = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 5), c("f__"=""))) %>% relocate(`family`, .before = c(5)) %>%
+  mutate(genus = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 6), c("g__"=""))) %>% relocate(`genus`, .before = c(6)) %>%
+  mutate(species = str_replace_all(sapply(strsplit(name, "|", fixed=TRUE), '[', 7), c("s__"=""))) %>% relocate(`species`, .before = c(7)) %>%
+  subset(select = -c(`name`)) %>%
+  add_column(profiler = c("MetaPhlAn (1Kbp Shreds)")) %>%
+  add_column(taxID = c(0))
 
 abundances_with_taxonomy <- rbind(
   ncbi_abundances_with_taxonomy,
@@ -121,7 +133,8 @@ colnames(abundances_with_taxonomy) <- gsub("\\)", "", colnames(abundances_with_t
 
 abundances_with_taxonomy <- rbind(
   abundances_with_taxonomy, 
-  metaphlan_prodigal_abundances_with_taxonomy
+  metaphlan_prodigal_abundances_with_taxonomy,
+  metaphlan_1kbp_shreds_abundances_with_taxonomy
 )
 
 ```
@@ -347,7 +360,7 @@ classes_proportions <- aggregate(. ~ class + profiler, abundances_with_taxonomy[
   "R018",
   "profiler",
   "class")], sum, na.rm = TRUE) %>% 
-  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018"))
 
 remainder <- aggregate(. ~ profiler+name, classes_proportions[classes_proportions$value <= 0.015,][, -c(1)], sum) %>%
   add_column(class=c("<1.5% Classes"))
