@@ -60,6 +60,23 @@ humann_1kbp_shreds_community <- humann_1kbp_shreds[!grepl("|", humann_1kbp_shred
 
 ```
 
+```{r get_metacyc_metadata}
+
+metacyc_metadata <- read_tsv("MetaCyc_pathway_metadata.txt", col_names = TRUE)
+names(metacyc_metadata)[names(metacyc_metadata) == "Pathways"] <- "Pathway"
+
+humann_prodigal_community_with_metadata <- humann_prodigal_community %>%
+  add_column(PathwayDescription = str_trim(sapply(strsplit(humann_prodigal_community$Pathway, ":", fixed=TRUE), '[', 2))) %>%
+  mutate(Pathway = sapply(strsplit(humann_prodigal_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
+  left_join(metacyc_metadata, by = "Pathway") 
+
+humann_1kbp_shreds_community_with_metadata <- humann_1kbp_shreds_community %>%
+  add_column(PathwayDescription = str_trim(sapply(strsplit(humann_1kbp_shreds_community$Pathway, ":", fixed=TRUE), '[', 2))) %>%
+  mutate(Pathway = sapply(strsplit(humann_1kbp_shreds_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
+  left_join(metacyc_metadata, by = "Pathway") 
+
+```
+
 ```{r get_genefamilies_files, results = 'hide'}
 
 humann_prodigal_genefamilies <- data.frame()
@@ -108,11 +125,34 @@ humann_1kbp_shreds_genefamilies_notaxa <- humann_1kbp_shreds_genefamilies[!grepl
 
 ```{r heatmap_of_community_pathways}
 
-community_pathway_heatmap <- ggplot(humann_prodigal_community[str_trim(humann_prodigal_community$Pathway) != "UNMAPPED" & str_trim(humann_prodigal_community$Pathway) != "UNINTEGRATED", ], aes(x = SampleName, y = Pathway, fill = log(`Relative Abundance`))) + 
-  geom_tile()
+humann_prodigal_community_pathways_with_metadata <- humann_prodigal_community_with_metadata[str_trim(humann_prodigal_community_with_metadata$Pathway) != "UNMAPPED" & str_trim(humann_prodigal_community_with_metadata$Pathway) != "UNINTEGRATED", ]
 
-ggsave("graphs/humann/community_pathway_heatmap_prodigal.png", community_pathway_heatmap, units = "px", height = 15000, width = 3500, limitsize = FALSE)
+#humann_prodigal_community_pathways_with_metadata <- humann_prodigal_community_pathways_with_metadata[order(humann_prodigal_community_pathways_with_metadata[, c(6)]), ]
+
+#humann_prodigal_community_pathways_with_metadata <- arrange(humann_prodigal_community_pathways_with_metadata, `Ontology - pathway type`)
+
+humann_prodigal_community_pathways_with_metadata <- humann_prodigal_community_pathways_with_metadata[order(humann_prodigal_community_pathways_with_metadata$`Ontology - pathway type`, humann_prodigal_community_pathways_with_metadata$`Ontology - direct parents of entity`, humann_prodigal_community_pathways_with_metadata$`PathwayDescription`), ]
+
+community_pathway_heatmap <- ggplot(humann_prodigal_community_pathways_with_metadata, aes(x = SampleName, y = factor(PathwayDescription, levels = unique(humann_prodigal_community_pathways_with_metadata$`PathwayDescription`)), fill = log(`Relative Abundance`))) + 
+  geom_tile(colour = "#000000ff", show.legend = FALSE) + 
+  theme(
+    panel.background = element_rect(fill = '#fff'),
+    panel.grid.major.y = element_line(colour="#00000000"),
+    panel.grid.major.x = element_line(colour="#00000011"),
+    plot.background = element_rect(fill = '#fff'),
+    legend.background = element_rect(fill = '#fff')
+  )
+
+ggsave("graphs/humann/community_pathway_heatmap_prodigal.png", community_pathway_heatmap, units = "px", height = 17000, width = 2700, limitsize = FALSE)
 community_pathway_heatmap
+
+#for (pathway in humann_prodigal_community_pathways_with_metadata$PathwayDescription) {
+#  graph <- ggplot(na.omit(humann_prodigal_community_pathways_with_metadata[humann_prodigal_community_pathways_with_metadata$`PathwayDescription` == pathway & !is.na(humann_prodigal_community_pathways_with_metadata$PathwayDescription), ]), aes(x = SampleName, y = log(`Relative Abundance`))) + 
+#    geom_bar(stat = "identity", show.legend = FALSE) + 
+#    ggtitle(pathway)
+  
+#  ggsave(paste0("graphs/humann/breakdown/", str_replace_all(string = pathway, pattern = "/", replacement = ""), ".png"), graph, units = "px", height = 2000, width = 2750)
+#}
 
 ```
 
