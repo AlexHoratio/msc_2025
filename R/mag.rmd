@@ -18,7 +18,7 @@ library(cowplot)
 
 ```
 
-``` {r get_dastool_summaries}
+``` {r get_dastool_summaries, results = 'hide'}
 
 dastool_summaries <- data.frame()
 

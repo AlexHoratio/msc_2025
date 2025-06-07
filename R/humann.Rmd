@@ -8,15 +8,133 @@ date: "2025-06-06"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r imports}
+```{r imports, results = 'hide'}
 
 library(tidyverse)
 source("humann_utils.r")
 
 ```
 
-```{r get_files}
+```{r get_pathabundance_files, results = 'hide'}
+
+humann_prodigal <- data.frame()
+
+for (filename in list.files("data/humann/prodigal")) {
+  if (grepl("pathabundance", filename)) {
+    if (length(humann_prodigal) == 0) {
+      humann_prodigal <- read_tsv(paste0("data/humann/prodigal/", filename), col_names = TRUE)
+      colnames(humann_prodigal) <- c("Pathway", "Relative Abundance")
+      humann_prodigal <- add_column(humann_prodigal, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      pathabundance <- read_tsv(paste0("data/humann/prodigal/", filename), col_names = TRUE)
+      colnames(pathabundance) <- c("Pathway", "Relative Abundance")
+      pathabundance <- add_column(pathabundance, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_prodigal <- rbind(humann_prodigal, pathabundance)
+    }
+  }
+}
+
+humann_1kbp_shreds <- data.frame()
+
+for (filename in list.files("data/humann/shredded_1kbp")) {
+  if (grepl("pathabundance", filename)) {
+    if (length(humann_1kbp_shreds) == 0) {
+      humann_1kbp_shreds <- read_tsv(paste0("data/humann/shredded_1kbp/", filename), col_names = TRUE)
+      colnames(humann_1kbp_shreds) <- c("Pathway", "Relative Abundance")
+      humann_1kbp_shreds <- add_column(humann_1kbp_shreds, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      pathabundance <- read_tsv(paste0("data/humann/shredded_1kbp/", filename), col_names = TRUE)
+      colnames(pathabundance) <- c("Pathway", "Relative Abundance")
+      pathabundance <- add_column(pathabundance, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_1kbp_shreds <- rbind(humann_1kbp_shreds, pathabundance)
+    }
+  }
+}
+
+humann_prodigal_community <- humann_prodigal[!grepl("|", humann_prodigal$Pathway, fixed = TRUE), ]
+humann_1kbp_shreds_community <- humann_1kbp_shreds[!grepl("|", humann_1kbp_shreds$Pathway, fixed = TRUE), ]
+
+```
+
+```{r get_genefamilies_files, results = 'hide'}
+
+humann_prodigal_genefamilies <- data.frame()
+
+for (filename in list.files("data/humann/prodigal")) {
+  if (grepl("genefamilies", filename)) {
+    if (length(humann_prodigal_genefamilies) == 0) {
+      humann_prodigal_genefamilies <- read_tsv(paste0("data/humann/prodigal/", filename), col_names = TRUE)
+      colnames(humann_prodigal_genefamilies) <-  c("Gene Family", "RPKs")
+      humann_prodigal_genefamilies <- add_column(humann_prodigal_genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      genefamilies <- read_tsv(paste0("data/humann/prodigal/", filename), col_names = TRUE)
+      colnames(genefamilies) <- c("Gene Family", "RPKs")
+      genefamilies <- add_column(genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_prodigal_genefamilies <- rbind(humann_prodigal_genefamilies, genefamilies)
+    }
+  }
+}
+
+humann_1kbp_shreds_genefamilies <- data.frame()
+
+for (filename in list.files("data/humann/shredded_1kbp")) {
+  if (grepl("genefamilies", filename)) {
+    if (length(humann_1kbp_shreds_genefamilies) == 0) {
+      humann_1kbp_shreds_genefamilies <- read_tsv(paste0("data/humann/shredded_1kbp/", filename), col_names = TRUE)
+      colnames(humann_1kbp_shreds_genefamilies) <-  c("Gene Family", "RPKs")
+      humann_1kbp_shreds_genefamilies <- add_column(humann_1kbp_shreds_genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      genefamilies <- read_tsv(paste0("data/humann/shredded_1kbp/", filename), col_names = TRUE)
+      colnames(genefamilies) <- c("Gene Family", "RPKs")
+      genefamilies <- add_column(genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_1kbp_shreds_genefamilies <- rbind(humann_1kbp_shreds_genefamilies, genefamilies)
+    }
+  }
+}
+
+humann_prodigal_genefamilies_notaxa <- humann_prodigal_genefamilies[!grepl("|", humann_prodigal_genefamilies$`Gene Family`, fixed = TRUE), ]
+humann_1kbp_shreds_genefamilies_notaxa <- humann_1kbp_shreds_genefamilies[!grepl("|", humann_1kbp_shreds_genefamilies$`Gene Family`, fixed = TRUE), ]
+
+```
 
 
+```{r heatmap_of_community_pathways}
+
+community_pathway_heatmap <- ggplot(humann_prodigal_community[str_trim(humann_prodigal_community$Pathway) != "UNMAPPED" & str_trim(humann_prodigal_community$Pathway) != "UNINTEGRATED", ], aes(x = SampleName, y = Pathway, fill = log(`Relative Abundance`))) + 
+  geom_tile()
+
+ggsave("graphs/humann/community_pathway_heatmap_prodigal.png", community_pathway_heatmap, units = "px", height = 15000, width = 3500, limitsize = FALSE)
+community_pathway_heatmap
+
+```
+
+```{r barchart_of_unmapped}
+
+unmapped_unintegrated_humann <- rbind(
+  humann_prodigal_community[humann_prodigal_community$Pathway == "UNMAPPED" | humann_prodigal_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "Prodigal ORFs"),
+  humann_1kbp_shreds_community[humann_1kbp_shreds_community$Pathway == "UNMAPPED" | humann_1kbp_shreds_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "1kbp Shreds")
+)
+
+unmapped_reads <- ggplot(unmapped_unintegrated_humann[unmapped_unintegrated_humann$Pathway == "UNMAPPED", ], aes(x = SampleName, y = `Relative Abundance`, fill = Input)) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  ggtitle("Abundance of Unmapped Reads (reads that do not map to any genes)")
+
+ggsave("graphs/humann/unmapped_reads.png", unmapped_reads, units = "px", width = 3000, height = 2500)
+unmapped_reads
+
+unintegrated_genes <- ggplot(unmapped_unintegrated_humann[unmapped_unintegrated_humann$Pathway == "UNINTEGRATED" & unmapped_unintegrated_humann$Input == "1kbp Shreds", ], aes(x = SampleName, y = `Relative Abundance`, fill = Input)) + 
+  geom_bar(stat = "identity", position = position_dodge()) +
+  ggtitle("Abundance of Unintegrated Genes (genes that do not belong to a MetaCyc pathway definition)") 
+
+ggsave("graphs/humann/unintegrated_genes.png", unintegrated_genes, units = "px", width = 3000, height = 2500)
+unintegrated_genes
 
 ```
