@@ -11,10 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library("ggVennDiagram")
 library("eulerr")
 library("taxonomizr")
-library("ggtext")
 library("RColorBrewer")
 library("cowplot")
 library("plotly")
+library("ggalluvial")
+library("ggtext")
 
 source("taxprofiler_utils.r")
 
@@ -50,6 +51,14 @@ metaphlan_prodigal_abundances <- get_metaphlan_names_and_abundances("data/humann
 
 metaphlan_1kbp_shreds_abundances <- get_metaphlan_names_and_abundances("data/humann/shredded_1kbp") %>%
   remove_absent_taxa()
+
+```
+
+```{r get_unclassified}
+
+all_unclassified <- get_unclassified_from_kreports("data/taxprofiler/raman/kreports/hrgmv2", "Bracken (HRGM2)") %>%
+  left_join(get_unclassified_from_kreports("data/taxprofiler/raman/kreports/pluspf", "Bracken (PlusPF)"), by = "SampleName") %>%
+  left_join(get_unclassified_from_kreports("data/taxprofiler/raman/centrifuger_loma", "Centrifuger (NCBI nt/nr)"), by = "SampleName")
 
 ```
 
@@ -136,6 +145,33 @@ abundances_with_taxonomy <- rbind(
   metaphlan_prodigal_abundances_with_taxonomy,
   metaphlan_1kbp_shreds_abundances_with_taxonomy
 )
+
+```
+
+
+```{r add_unclassified_to_abundances}
+
+unclassified_taxonomy <- data.frame(t(all_unclassified[, -c(1)]))
+
+colnames(unclassified_taxonomy) <- all_unclassified[, c(1)]
+unclassified_taxonomy <- add_column(unclassified_taxonomy, profiler = rownames(unclassified_taxonomy)) %>%
+  add_column(taxID = c(0)) %>%
+  add_column(domain = c("Unclassified")) %>%
+  add_column(phylum = c("Unclassified")) %>%
+  add_column(class = c("Unclassified")) %>%
+  add_column(order = c("Unclassified")) %>%
+  add_column(family = c("Unclassified")) %>%
+  add_column(genus = c("Unclassified")) %>%
+  add_column(species = c("Unclassified")) %>%
+  mutate(taxID = as.character(taxID))
+
+rownames(unclassified_taxonomy) <- NULL
+
+abundances_with_taxonomy <- rbind(
+  abundances_with_taxonomy,
+  unclassified_taxonomy
+)
+
 
 ```
 
@@ -693,5 +729,80 @@ alpha_panel <- plot_grid(shannon_diversity, isimpson_diversity, labels=c("A", "B
 
 ggsave('graphs/taxprofiler/alpha_panel.png', alpha_panel)
 alpha_panel
+
+```
+
+
+```{r compare_kraken2_pluspf_hrgm2}
+
+abundances_pluspf_hrgm2 <- aggregate(. ~ phylum + profiler, abundances_with_taxonomy[abundances_with_taxonomy$profiler == "Bracken (PlusPF)" | abundances_with_taxonomy$profiler == "Bracken (HRGM2)", c(
+  "R003",
+  "R004",
+  "R005",
+  "R007",
+  "R012",
+  "R018",
+  "profiler",
+  "phylum")], sum, na.rm = TRUE) %>% 
+  pivot_longer(cols=c("R003", "R004", "R005", "R007", "R012", "R018")) 
+
+remainder <- aggregate(. ~ profiler+name, abundances_pluspf_hrgm2[abundances_pluspf_hrgm2$value <= 0.01,][, -c(1)], sum) %>%
+  add_column(phylum=c("<1% Phyla"))
+
+abundances_pluspf_hrgm2 <- abundances_pluspf_hrgm2 %>%
+  filter(value > c(0.01)) %>%
+  rbind(remainder)
+
+abundances_pluspf_hrgm2[abundances_pluspf_hrgm2$profiler == "Bracken (PlusPF)", "profiler"] <- "PlusPF"
+abundances_pluspf_hrgm2[abundances_pluspf_hrgm2$profiler == "Bracken (HRGM2)", "profiler"] <- "HRGMv2"
+
+pluspf_v_hrgm2 <- ggplot(abundances_pluspf_hrgm2, aes(x = profiler, y = value, fill = phylum)) + 
+  #geom_flow(aes(alluvium = phylum),
+  #          alpha = 0.6,
+  #          curve_type = "linear",
+  #          color = "white",
+  #          width = 0.5) +
+  geom_bar(stat = "identity", position = "fill", width = 0.5, colour="white") +
+  facet_wrap(. ~ name) +
+  labs(fill = "Phylum") +
+  ylab("") + 
+  xlab("Profiler") +
+  theme_classic() + 
+  theme(
+    strip.text = element_text(face = "bold", size = 12),
+   # legend.position = "bottom"
+  )
+
+ggsave("graphs/taxprofiler/pluspf_v_hrgm2.png", pluspf_v_hrgm2, units = "px", width = 2500, height = 1500)
+pluspf_v_hrgm2
+
+
+```
+
+```{r compare_unclassified}
+
+all_unclassified_long <- pivot_longer(all_unclassified, cols = c("Bracken (PlusPF)", "Bracken (HRGM2)", "Centrifuger (NCBI nt/nr)"))
+
+#all_unclassified_long[all_unclassified_long$name == "Bracken (PlusPF)", "name"] <- "PlusPF"
+#all_unclassified_long[all_unclassified_long$name == "Bracken (HRGM2)", "name"] <- "HRGMv2"
+#all_unclassified_long[all_unclassified_long$name == "Centrifuger (NCBI nt/nr)", "name"] <- "NCBI nt/nr"
+
+unclassified_barchart <- ggplot(all_unclassified_long, aes(x = name, y = value, fill = name)) + 
+  geom_bar(stat = "identity", show.legend = FALSE) + 
+  facet_wrap(. ~ SampleName) + 
+  theme_classic() +
+  labs(fill = "Profiler") +
+  coord_flip() +
+  ylab("Unclassified Reads (% of total)") + 
+  xlab("Profiler") +
+  theme_classic() + 
+  theme(
+    strip.text = element_text(face = "bold", size = 12),
+   # legend.position = "bottom"
+  )
+
+
+ggsave("graphs/taxprofiler/unclassified_reads.png", unclassified_barchart, units = "px", width = 2500, height = 1500)
+unclassified_barchart
 
 ```

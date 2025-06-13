@@ -241,6 +241,25 @@ get_metaphlan_names_and_abundances <- function(folder_path) {
   
 }
 
+# NOT A BRACKEN KREPORT!!
+# BECAUSE BRACKEN WILL DELETE UNCLASSIFIED!!
+get_unclassified_from_kreports <- function(kreports_path, unclassified_colname = "Unclassified") {
+  filenames <- Sys.glob(paste0(kreports_path, "/*.txt"))
+  
+  unclassifieds <- data.frame(SampleName=character())
+  
+  for (f in filenames) {
+    kreport_file <- read_tsv(f, col_names = FALSE)
+    
+    unclassifieds[nrow(unclassifieds) + 1, c("SampleName")] <- str_extract(f, "[R]+[0-9]+")
+    unclassifieds[unclassifieds$SampleName == str_extract(f, "[R]+[0-9]+"), c(unclassified_colname)] <- (as.numeric(kreport_file[c(1), c(1)]))
+    #unclassifieds[unclassifieds$SampleName == str_extract(f, "[R]+[0-9]+"), c(unclassified_colname)] <- (as.numeric(kreport_file[c(1), c(1)]) / 100.0) * (100.0 / (100.0 - as.numeric(kreport_file[c(1), c(1)]))) # this keeps it in proportion when added to the file.
+    # ... ^ the total is over 100 now, but unclassified is added in the correct proportion to display properly on the graphs
+  }
+  
+  return(unclassifieds)
+}
+
 # Does this need to be declared on its own? ...
 gt_zero <- function(x) { return(x > 0 & !is.na(x)) }
 
