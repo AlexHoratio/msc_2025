@@ -19,19 +19,57 @@ source("humann_utils.r")
 
 humann_prodigal <- data.frame()
 
-for (filename in list.files("data/humann/renormalized/prodigal")) {
+for (filename in list.files("data/humann_wnanolyse/prodigal/")) {
   if (grepl("pathabundance", filename)) {
     if (length(humann_prodigal) == 0) {
-      humann_prodigal <- read_tsv(paste0("data/humann/renormalized/prodigal/", filename), col_names = TRUE)
+      humann_prodigal <- read_tsv(paste0("data/humann_wnanolyse/prodigal/", filename), col_names = TRUE)
       colnames(humann_prodigal) <- c("Pathway", "Relative Abundance")
       humann_prodigal <- add_column(humann_prodigal, SampleName = str_extract(filename, "[R]+[0-9]+"))
       
     } else {
-      pathabundance <- read_tsv(paste0("data/humann/renormalized/prodigal/", filename), col_names = TRUE)
+      pathabundance <- read_tsv(paste0("data/humann_wnanolyse/prodigal/", filename), col_names = TRUE)
       colnames(pathabundance) <- c("Pathway", "Relative Abundance")
       pathabundance <- add_column(pathabundance, SampleName = str_extract(filename, "[R]+[0-9]+"))
       
       humann_prodigal <- rbind(humann_prodigal, pathabundance)
+    }
+  }
+}
+
+humann_100bp_shreds <- data.frame()
+
+for (filename in list.files("data/humann_wnanolyse/shredded_100bp/")) {
+  if (grepl("pathabundance", filename)) {
+    if (length(humann_100bp_shreds) == 0) {
+      humann_100bp_shreds <- read_tsv(paste0("data/humann_wnanolyse/shredded_100bp/", filename), col_names = TRUE)
+      colnames(humann_100bp_shreds) <- c("Pathway", "Relative Abundance")
+      humann_100bp_shreds <- add_column(humann_100bp_shreds, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      pathabundance <- read_tsv(paste0("data/humann_wnanolyse/shredded_100bp/", filename), col_names = TRUE)
+      colnames(pathabundance) <- c("Pathway", "Relative Abundance")
+      pathabundance <- add_column(pathabundance, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_100bp_shreds <- rbind(humann_100bp_shreds, pathabundance)
+    }
+  }
+}
+
+humann_500bp_shreds <- data.frame()
+
+for (filename in list.files("data/humann_wnanolyse/shredded_500bp/")) {
+  if (grepl("pathabundance", filename)) {
+    if (length(humann_500bp_shreds) == 0) {
+      humann_500bp_shreds <- read_tsv(paste0("data/humann_wnanolyse/shredded_500bp/", filename), col_names = TRUE)
+      colnames(humann_500bp_shreds) <- c("Pathway", "Relative Abundance")
+      humann_500bp_shreds <- add_column(humann_500bp_shreds, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      pathabundance <- read_tsv(paste0("data/humann_wnanolyse/shredded_500bp/", filename), col_names = TRUE)
+      colnames(pathabundance) <- c("Pathway", "Relative Abundance")
+      pathabundance <- add_column(pathabundance, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_500bp_shreds <- rbind(humann_500bp_shreds, pathabundance)
     }
   }
 }
@@ -56,6 +94,8 @@ for (filename in list.files("data/humann/renormalized/shredded_1kbp")) {
 }
 
 humann_prodigal_community <- humann_prodigal[!grepl("|", humann_prodigal$Pathway, fixed = TRUE), ]
+humann_100bp_shreds_community <- humann_100bp_shreds[!grepl("|", humann_100bp_shreds$Pathway, fixed = TRUE), ]
+humann_500bp_shreds_community <- humann_500bp_shreds[!grepl("|", humann_500bp_shreds$Pathway, fixed = TRUE), ]
 humann_1kbp_shreds_community <- humann_1kbp_shreds[!grepl("|", humann_1kbp_shreds$Pathway, fixed = TRUE), ]
 
 ```
@@ -70,6 +110,16 @@ humann_prodigal_community_with_metadata <- humann_prodigal_community %>%
   mutate(Pathway = sapply(strsplit(humann_prodigal_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
   left_join(metacyc_metadata, by = "Pathway") 
 
+humann_100bp_shreds_community_with_metadata <- humann_100bp_shreds_community %>%
+  add_column(PathwayDescription = str_trim(sapply(strsplit(humann_100bp_shreds_community$Pathway, ":", fixed=TRUE), '[', 2))) %>%
+  mutate(Pathway = sapply(strsplit(humann_100bp_shreds_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
+  left_join(metacyc_metadata, by = "Pathway") 
+
+humann_500bp_shreds_community_with_metadata <- humann_500bp_shreds_community %>%
+  add_column(PathwayDescription = str_trim(sapply(strsplit(humann_500bp_shreds_community$Pathway, ":", fixed=TRUE), '[', 2))) %>%
+  mutate(Pathway = sapply(strsplit(humann_500bp_shreds_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
+  left_join(metacyc_metadata, by = "Pathway") 
+
 humann_1kbp_shreds_community_with_metadata <- humann_1kbp_shreds_community %>%
   add_column(PathwayDescription = str_trim(sapply(strsplit(humann_1kbp_shreds_community$Pathway, ":", fixed=TRUE), '[', 2))) %>%
   mutate(Pathway = sapply(strsplit(humann_1kbp_shreds_community$Pathway, ":", fixed=TRUE), '[', 1)) %>% 
@@ -81,7 +131,7 @@ humann_1kbp_shreds_community_with_metadata <- humann_1kbp_shreds_community %>%
 
 humann_prodigal_genefamilies <- data.frame()
 
-for (filename in list.files("data/humann/renormalized/prodigal")) {
+for (filename in list.files("data/humann/renormalized/prodigal/")) {
   if (grepl("genefamilies", filename)) {
     if (length(humann_prodigal_genefamilies) == 0) {
       humann_prodigal_genefamilies <- read_tsv(paste0("data/humann/renormalized/prodigal/", filename), col_names = TRUE)
@@ -97,6 +147,45 @@ for (filename in list.files("data/humann/renormalized/prodigal")) {
     }
   }
 }
+
+humann_100bp_shreds_genefamilies <- data.frame()
+
+for (filename in list.files("data/humann_wnanolyse/shredded_100bp/")) {
+  if (grepl("genefamilies", filename)) {
+    if (length(humann_100bp_shreds_genefamilies) == 0) {
+      humann_100bp_shreds_genefamilies <- read_tsv(paste0("data/humann_wnanolyse/shredded_100bp/", filename), col_names = TRUE)
+      colnames(humann_100bp_shreds_genefamilies) <-  c("Gene Family", "RPKs")
+      humann_100bp_shreds_genefamilies <- add_column(humann_100bp_shreds_genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      genefamilies <- read_tsv(paste0("data/humann_wnanolyse/shredded_100bp/", filename), col_names = TRUE)
+      colnames(genefamilies) <- c("Gene Family", "RPKs")
+      genefamilies <- add_column(genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_100bp_shreds_genefamilies <- rbind(humann_100bp_shreds_genefamilies, genefamilies)
+    }
+  }
+}
+
+humann_500bp_shreds_genefamilies <- data.frame()
+
+for (filename in list.files("data/humann_wnanolyse/shredded_500bp/")) {
+  if (grepl("genefamilies", filename)) {
+    if (length(humann_500bp_shreds_genefamilies) == 0) {
+      humann_500bp_shreds_genefamilies <- read_tsv(paste0("data/humann_wnanolyse/shredded_500bp/", filename), col_names = TRUE)
+      colnames(humann_500bp_shreds_genefamilies) <-  c("Gene Family", "RPKs")
+      humann_500bp_shreds_genefamilies <- add_column(humann_500bp_shreds_genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+    } else {
+      genefamilies <- read_tsv(paste0("data/humann_wnanolyse/shredded_500bp/", filename), col_names = TRUE)
+      colnames(genefamilies) <- c("Gene Family", "RPKs")
+      genefamilies <- add_column(genefamilies, SampleName = str_extract(filename, "[R]+[0-9]+"))
+      
+      humann_500bp_shreds_genefamilies <- rbind(humann_500bp_shreds_genefamilies, genefamilies)
+    }
+  }
+}
+
 
 humann_1kbp_shreds_genefamilies <- data.frame()
 
@@ -118,6 +207,8 @@ for (filename in list.files("data/humann/renormalized/shredded_1kbp")) {
 }
 
 humann_prodigal_genefamilies_notaxa <- humann_prodigal_genefamilies[!grepl("|", humann_prodigal_genefamilies$`Gene Family`, fixed = TRUE), ]
+humann_100bp_shreds_genefamilies_notaxa <- humann_100bp_shreds_genefamilies[!grepl("|", humann_100bp_shreds_genefamilies$`Gene Family`, fixed = TRUE), ]
+humann_500bp_shreds_genefamilies_notaxa <- humann_500bp_shreds_genefamilies[!grepl("|", humann_500bp_shreds_genefamilies$`Gene Family`, fixed = TRUE), ]
 humann_1kbp_shreds_genefamilies_notaxa <- humann_1kbp_shreds_genefamilies[!grepl("|", humann_1kbp_shreds_genefamilies$`Gene Family`, fixed = TRUE), ]
 
 ```
@@ -159,6 +250,23 @@ community_pathway_heatmap <- ggplot(humann_1kbp_shreds_community_pathways_with_m
 ggsave("graphs/humann/community_pathway_heatmap_1kbp_shreds.png", community_pathway_heatmap, units = "px", height = 17000, width = 2700, limitsize = FALSE)
 community_pathway_heatmap
 
+humann_100bp_shreds_community_pathways_with_metadata <- humann_100bp_shreds_community_with_metadata[str_trim(humann_100bp_shreds_community_with_metadata$Pathway) != "UNMAPPED" & str_trim(humann_100bp_shreds_community_with_metadata$Pathway) != "UNINTEGRATED", ]
+
+humann_100bp_shreds_community_pathways_with_metadata <- humann_100bp_shreds_community_pathways_with_metadata[order(humann_100bp_shreds_community_pathways_with_metadata$`Ontology - pathway type`, humann_100bp_shreds_community_pathways_with_metadata$`Ontology - direct parents of entity`, humann_100bp_shreds_community_pathways_with_metadata$`PathwayDescription`), ]
+
+community_pathway_heatmap <- ggplot(humann_100bp_shreds_community_pathways_with_metadata, aes(x = SampleName, y = factor(PathwayDescription, levels = unique(humann_100bp_shreds_community_pathways_with_metadata$`PathwayDescription`)), fill = log(`Relative Abundance`))) + 
+  geom_tile(colour = "#00000000", show.legend = FALSE) + 
+  theme(
+    panel.background = element_rect(fill = '#fff'),
+    panel.grid.major.y = element_line(colour="#00000000"),
+    panel.grid.major.x = element_line(colour="#00000011"),
+    plot.background = element_rect(fill = '#fff'),
+    legend.background = element_rect(fill = '#fff')
+  )
+
+ggsave("graphs/humann/community_pathway_heatmap_100bp_shreds.png", community_pathway_heatmap, units = "px", height = 17000, width = 2700, limitsize = FALSE)
+community_pathway_heatmap
+
 #for (pathway in humann_prodigal_community_pathways_with_metadata$PathwayDescription) {
 #  graph <- ggplot(na.omit(humann_prodigal_community_pathways_with_metadata[humann_prodigal_community_pathways_with_metadata$`PathwayDescription` == pathway & !is.na(humann_prodigal_community_pathways_with_metadata$PathwayDescription), ]), aes(x = SampleName, y = log(`Relative Abundance`))) + 
 #    geom_bar(stat = "identity", show.legend = FALSE) + 
@@ -173,7 +281,9 @@ community_pathway_heatmap
 
 unmapped_unintegrated_humann <- rbind(
   humann_prodigal_community[humann_prodigal_community$Pathway == "UNMAPPED" | humann_prodigal_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "Prodigal ORFs"),
-  humann_1kbp_shreds_community[humann_1kbp_shreds_community$Pathway == "UNMAPPED" | humann_1kbp_shreds_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "1kbp Shreds")
+  humann_1kbp_shreds_community[humann_1kbp_shreds_community$Pathway == "UNMAPPED" | humann_1kbp_shreds_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "1kbp Shreds"),
+  humann_100bp_shreds_community[humann_100bp_shreds_community$Pathway == "UNMAPPED" | humann_100bp_shreds_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "100bp Shreds"),
+  humann_500bp_shreds_community[humann_500bp_shreds_community$Pathway == "UNMAPPED" | humann_500bp_shreds_community$Pathway == "UNINTEGRATED", ] %>% add_column(Input = "500bp Shreds")
 )
 
 unmapped_reads <- ggplot(unmapped_unintegrated_humann[unmapped_unintegrated_humann$Pathway == "UNMAPPED", ], aes(x = SampleName, y = `Relative Abundance`, fill = Input)) + 
