@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r imports, results = 'hide'}
 
 library(tidyverse)
+library(vegan)
 source("humann_utils.r")
 
 ```
@@ -299,5 +300,67 @@ unintegrated_genes <- ggplot(unmapped_unintegrated_humann[unmapped_unintegrated_
 
 ggsave("graphs/humann/unintegrated_genes.png", unintegrated_genes, units = "px", width = 3000, height = 2500)
 unintegrated_genes
+
+```
+
+
+```{r ordination}
+
+humann_prodigal_community_for_ordination <- humann_prodigal_community %>%
+  pivot_wider(
+    names_from = SampleName,
+    values_from = `Relative Abundance`,
+    values_fill = 0,
+    values_fn = sum
+  )
+
+humann_prodigal_mds <- metaMDS(as.data.frame(t(humann_prodigal_community_for_ordination[, -c(1)])))
+
+humann_100bp_shreds_community_for_ordination <- humann_100bp_shreds_community %>%
+  pivot_wider(
+    names_from = SampleName,
+    values_from = `Relative Abundance`,
+    values_fill = 0,
+    values_fn = sum
+  )
+
+humann_100bp_shreds_mds <- metaMDS(as.data.frame(t(humann_100bp_shreds_community_for_ordination[, -c(1)])))
+
+humann_500bp_shreds_community_for_ordination <- humann_500bp_shreds_community %>%
+  pivot_wider(
+    names_from = SampleName,
+    values_from = `Relative Abundance`,
+    values_fill = 0,
+    values_fn = sum
+  )
+
+humann_500bp_shreds_mds <- metaMDS(as.data.frame(t(humann_500bp_shreds_community_for_ordination[, -c(1)])))
+
+humann_1kbp_shreds_community_for_ordination <- humann_1kbp_shreds_community %>%
+  pivot_wider(
+    names_from = SampleName,
+    values_from = `Relative Abundance`,
+    values_fill = 0,
+    values_fn = sum
+  )
+
+humann_1kbp_shreds_mds <- metaMDS(as.data.frame(t(humann_1kbp_shreds_community_for_ordination[, -c(1)])))
+
+
+ggplot(as.data.frame(humann_prodigal_mds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(humann_prodigal_mds[["points"]])))) +
+  geom_point() + 
+  geom_text()
+
+ggplot(as.data.frame(humann_100bp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(humann_100bp_shreds_mds[["points"]])))) +
+  geom_point() + 
+  geom_text()
+
+ggplot(as.data.frame(humann_500bp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(humann_500bp_shreds_mds[["points"]])))) +
+  geom_point() + 
+  geom_text()
+
+ggplot(as.data.frame(humann_1kbp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(humann_1kbp_shreds_mds[["points"]])))) +
+  geom_point() + 
+  geom_text()
 
 ```

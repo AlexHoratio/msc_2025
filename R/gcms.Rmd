@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r imports}
 
 library("GCalignR")
+library("vegan")
 
 ```
 
@@ -20,8 +21,61 @@ chemstation_list_input <- list()
 
 for (filename in list.files("data/gcms/ChemStation")) {
   sample <- read_tsv(paste0("data/gcms/ChemStation/", filename), skip = 4)
-  
-  chemstation_list_input <- c(chemstation_list_input, list(sample[, c(2, 5)]))
+  colnames(sample) <- c("Peak", "RT", "Type", "Width", "Area", "Start", "End")
+  chemstation_list_input[str_extract(filename, "[R]+[0-9]+[_]+[0-9]+")] <- list(sample[, c(2, 5)])
 }
+
+openchrom_raw <- list()
+
+for (filename in list.files("data/gcms/OpenChrom")) {
+  sample <- read_tsv(paste0("data/gcms/OpenChrom/", filename), skip = 1, col_names = FALSE)
+  colnames(sample) <- c("RT", "Area")
+  openchrom_raw[str_extract(filename, "[R]+[0-9]+[_]+[0-9]+[a-z]?")] <- list(sample[, c(1, 2)])
+}
+
+
+```
+
+```{r align_chromatograms}
+
+# Input makes sense
+check_input(data = openchrom_raw, plot = F)
+
+# How far apart are neighboring peaks in (within) each of these samples?
+peak_interspace(data = openchrom_raw, rt_col_name = "RT", quantile_range = c(0.0, 0.8), quantiles = 0.05)
+
+# ChemStation: Looks like there are a lot of close peaks. min_diff_peak2peak = 0.02
+# OpenChrom: Not as close! min_diff_peak2peak = 0.04
+
+openchrom_aligned <- align_chromatograms(data = openchrom_raw,
+  rt_col_name = "RT",
+  min_diff_peak2peak = 0.05,
+  max_diff_peak2peak = 0.05,
+)
+
+```
+
+```{r visualize}
+
+gc_heatmap(openchrom_aligned)
+
+plot(openchrom_aligned, which_plot = "all")
+
+```
+
+```{r normalize}
+
+openchrom_normalized <- norm_peaks(openchrom_aligned, conc_col_name = "Area", rt_col_name = "RT", out = "data.frame")
+
+```
+
+
+```{r ordination}
+
+openchrom_nmds <- metaMDS(comm = openchrom_normalized, distance = "bray")
+
+ggplot(as.data.frame(openchrom_nmds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(openchrom_nmds[["points"]])))) +
+  geom_point() + 
+  geom_text(position = position_jitter(height = 0.0))
 
 ```

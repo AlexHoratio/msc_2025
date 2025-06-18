@@ -417,9 +417,11 @@ htmlwidgets::saveWidget(as_widget(plotly_build(coverm_domains)), "graphs/plotly/
 
 ```{r phylum_compare}
 
-kmer_phyla_proportions <- phyla_proportions 
+kmer_phyla_proportions <- phyla_proportions
 colnames(kmer_phyla_proportions) <- c("Phylum", "Assembler", "SampleName", "Relative Abundance") 
 kmer_phyla_proportions <- kmer_phyla_proportions %>%
+  filter(Assembler != "MetaPhlAn (Prodigal)") %>%
+  filter(Assembler != "MetaPhlAn (1Kbp Shreds)") %>%
   add_column(Approach = c("K-mers"))
 
 all_phyla_proportions <- coverm_gtdb[, c("Phylum", "Assembler", "Relative Abundance", "SampleName")] %>% 
@@ -449,6 +451,7 @@ coverm_phyla <- ggplot(all_phyla_proportions, aes(x = Assembler, y = `Relative A
     legend.position = "bottom",
   )
 
+ggsave("graphs/nfmag/compare_phyla.png", coverm_phyla, units = "px", width = 2100, height = 1400)
 coverm_phyla
 htmlwidgets::saveWidget(as_widget(plotly_build(coverm_phyla)), "graphs/plotly/phylum.html")
 
