@@ -25,10 +25,12 @@ source("prokka_utils.r")
 
 ```{r get_cog_definitions}
 
-cog_def <- read_tsv("data/loma/RAMAN_PROKKA/COG/cog-24.def.tab", col_names = FALSE)
+# from https://ftp.ncbi.nih.gov/pub/COG/COG2024/data/cog-24.def.tab
+cog_def <- read_tsv("data/cog-24.def.tab", col_names = FALSE)
 colnames(cog_def) <- c("COG", "Function", "Name", "Gene", "Pathway", "PubMed ID", "PDB ID")
 
-cog_fun <- read_tsv("data/loma/RAMAN_PROKKA/COG/cog-24.fun.tab", col_names = FALSE) %>% na.omit
+# from https://ftp.ncbi.nih.gov/pub/COG/COG2024/data/cog-24.fun.tab
+cog_fun <- read_tsv("data/cog-24.fun.tab", col_names = FALSE) %>% na.omit
 colnames(cog_fun) <- c("Function", "Functional Group", "Hex", "Description")
 
 ```
