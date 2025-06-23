@@ -15,6 +15,10 @@ library("GCalignR")
 library("vegan")
 library("pheatmap")
 library("dendextend")
+library("devtools")
+
+#devtools::install("C:\\users\\horat\\desktop\\MetaboAnalystR", build = TRUE, build_vignettes = TRUE, build_manual =T)
+library("MetaboAnalystR")
 
 ```
 
@@ -69,7 +73,6 @@ plot(openchrom_aligned, which_plot = "all")
 ```{r normalize}
 
 openchrom_normalized <- norm_peaks(openchrom_aligned, conc_col_name = "Area", rt_col_name = "RT", out = "data.frame")
-
 openchrom_normalized <- log(openchrom_normalized + 1)
 
 ```
@@ -114,5 +117,18 @@ pheatmap(as.matrix(openchrom_normalized_t),
          clustering_distance_cols = "manhattan",
          #filename = "graphs/gcms/dendrogram_heatmap.png"
          )
+
+```
+
+
+```{r metaboanalystr}
+
+openchrom_normalized_specbins <- openchrom_normalized %>%
+  add_column(SampleName = rownames(openchrom_normalized), .before = c(1)) %>%
+  add_column(SampleGroup = str_extract(rownames(openchrom_normalized), "[R]+[0-9]+"), .before = c(2))
+
+write_csv(openchrom_normalized_specbins, "data/gcms/specbins.csv")
+
+
 
 ```
