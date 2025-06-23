@@ -451,7 +451,7 @@ coverm_phyla <- ggplot(all_phyla_proportions, aes(x = Assembler, y = `Relative A
     legend.position = "bottom",
   )
 
-ggsave("graphs/nfmag/compare_phyla.png", coverm_phyla, units = "px", width = 2100, height = 1400)
+ggsave("graphs/nfmag/compare_phyla.png", coverm_phyla, units = "px", width = 2900, height = 1400)
 coverm_phyla
 htmlwidgets::saveWidget(as_widget(plotly_build(coverm_phyla)), "graphs/plotly/phylum.html")
 

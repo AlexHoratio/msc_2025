@@ -10,8 +10,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r imports}
 
+library("tidyverse")
 library("GCalignR")
 library("vegan")
+library("pheatmap")
+library("dendextend")
 
 ```
 
@@ -45,7 +48,7 @@ check_input(data = openchrom_raw, plot = F)
 peak_interspace(data = openchrom_raw, rt_col_name = "RT", quantile_range = c(0.0, 0.8), quantiles = 0.05)
 
 # ChemStation: Looks like there are a lot of close peaks. min_diff_peak2peak = 0.02
-# OpenChrom: Not as close! min_diff_peak2peak = 0.04
+# OpenChrom: Not as close! min_diff_peak2peak = 0.05
 
 openchrom_aligned <- align_chromatograms(data = openchrom_raw,
   rt_col_name = "RT",
@@ -67,6 +70,8 @@ plot(openchrom_aligned, which_plot = "all")
 
 openchrom_normalized <- norm_peaks(openchrom_aligned, conc_col_name = "Area", rt_col_name = "RT", out = "data.frame")
 
+openchrom_normalized <- log(openchrom_normalized + 1)
+
 ```
 
 
@@ -77,5 +82,37 @@ openchrom_nmds <- metaMDS(comm = openchrom_normalized, distance = "bray")
 ggplot(as.data.frame(openchrom_nmds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(openchrom_nmds[["points"]])))) +
   geom_point() + 
   geom_text(position = position_jitter(height = 0.0))
+
+```
+
+
+```{r heatmap}
+
+openchrom_normalized_t <- as.data.frame(t(openchrom_normalized))
+mz <- rownames(openchrom_normalized_t)
+
+dist_rows.euclid <- dist(openchrom_normalized_t, method = "euclidean")
+dist_rows.manhattan <- dist(openchrom_normalized_t, method = "manhattan")
+dist_rows.pearson <- dist(1 - cor(openchrom_normalized_t, method = "pearson"))
+
+row_clusters.euclid <- hclust(dist_rows.euclid, method = "complete")
+row_clusters.manhattan <- hclust(dist_rows.manhattan, method = "complete")
+row_clusters.pearson <- hclust(dist_rows.pearson, method = "complete")
+
+
+dist_cols.euclid <- dist(openchrom_normalized, method = "euclidean")
+dist_cols.manhattan <- dist(openchrom_normalized, method = "manhattan")
+dist_cols.pearson <- dist(1 - cor(openchrom_normalized, method = "pearson"))
+
+col_clusters.euclid <- hclust(dist_cols.euclid, method = "complete")
+col_clusters.manhattan <- hclust(dist_cols.manhattan, method = "complete")
+col_clusters.pearson <- hclust(dist_cols.pearson, method = "complete")
+
+pheatmap(as.matrix(openchrom_normalized_t),
+         cluster_rows = FALSE,# row_clusters.euclid,
+         cluster_cols = TRUE,
+         clustering_distance_cols = "manhattan",
+         #filename = "graphs/gcms/dendrogram_heatmap.png"
+         )
 
 ```

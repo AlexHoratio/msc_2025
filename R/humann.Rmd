@@ -288,6 +288,30 @@ community_pathway_heatmap
 
 ```
 
+```{r pheatmap_of_pathways}
+
+humann_prodigal_community_wide <- humann_prodigal_community %>%
+  pivot_wider(
+    names_from = SampleName,
+    values_from = `Relative Abundance`,
+    values_fill = 0,
+    values_fn = sum
+  )
+
+humann_prodigal_pathway_names <- humann_prodigal_community_wide$Pathway
+humann_prodigal_community_wide <- humann_prodigal_community_wide[, -c(1)]
+rownames(humann_prodigal_community_wide) <- humann_prodigal_pathway_names
+
+humann_prodigal_community_wide <- log(humann_prodigal_community_wide + 1)
+
+pheatmap(as.matrix(humann_prodigal_community_wide), 
+         filename = "graphs/humann/dendrogram_heatmap_prodigal.png",
+         cellwidth = 45,
+         cellheight = 15
+         )
+
+```
+
 ```{r barchart_of_unmapped}
 
 unmapped_unintegrated_humann <- rbind(
@@ -372,5 +396,87 @@ ggplot(as.data.frame(humann_500bp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS
 ggplot(as.data.frame(humann_1kbp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS2, label = rownames(as.data.frame(humann_1kbp_shreds_mds[["points"]])))) +
   geom_point() + 
   geom_text()
+
+```
+
+
+```{r butanoate_synthesis}
+
+butanoate_synthesis_pathways <- c("PWY-8190", "PWY-5022", "P163-PWY", "GLUDEG-II-PWY", "CENTFERM-PWY", "PWY-5676", "P162-PWY", "PWY-5677")
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% butanoate_synthesis_pathways) %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Synthesis of Butyrate")) %>%
+  
+  ggsave("graphs/humann/butyrate_synthesis.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+
+```{r acetate_synthesis}
+
+acetate_synthesis_pathways <- c("PWY66-21", "PWY66-161", "PWY66-162", "PWY-7387", "PWY-5641", "TOLUENE-DEG-DIOL-PWY", "TOLUENE-DEG-2-OH-PWY", "PWY-5754", "PWY-6431", "PWY-5665", "GLUAMCAT-PWY", "PWY-6906", "PWY0-1261", "PWY-7000", "PWY-7014", "PWY-7022", "PWY-8202", "PWY66-378", "PWY-5022", "PWY-5677", "PWY-7077", "PWY-7395", "PWY8J2-25", "PWY-8418", "PWY-7174", "PWY-8132", "PWY-5867", "PWY-5882", "PWY-7268", "PWY-5768", "P162-PWY", "PWY-8190", "PWYI-14", "PWY-8245", "PWY-5794", "PWY-6060", "PWY-7545", "PWY-7544", "PWY-4961", "PWY-8337", "PWY-5643", "PWY-7521", "PWY-7002", "PWY-6672", "PWY-8071", "PWY-5301", "PWY-8293", "PWY-7599", "P482-PWY", "PWY8J2-1", "PWY-8200", "PWY-6444", "PWY-7118", "PWY-6855", "PWY0-1309", "PWY-6038", "P2-PWY", "PWY-7376", "PWY-4741", "PWY-7401", "PWY-7274", "PWY-8453", "PWY-7712", "PWY-6056", "PWY-7855", "PWY-5883", "PWY-8408", "PWY-5708", "PWY-5859", "PWY-5835", "PWY-804", "PWY-7552", "PWY-6558", "PWY-8087", "PWY-5154", "CYSTSYN-PWY", "PWY-I9", "PWY-7870", "PWY-5075", "PWY-2941", "LYSDEGII-PWY", "GLUTORN-PWY", "PWY-8530", "PWY-6955", "PWY2B4Q-4", "NAGLIPASYN-PWY", "PWY-8245", "PWY-8073", "PWY2G6Z-2", "PWY-8283", "PWY-5967", "PWY-6399", "PWY-4985", "PWY-5270", "PWY1G-0", "PWY-7016", "PWY-8506", "PWY-7713", "PWY-7138", "P342-PWY", "PWY-6699", "PWY-7018", "P641-PWY", "PWY-7769", "PWY-6322", "P483-PWY", "PWY0-1609", "PWY-6464", "PWY-7774", "PWY-7775", "PWY-5929", "PWY-0", "PWY-7906", "PWY-6936", "SOPHOROSYLOXYDOCOSANOATE-DEG-PWY", "PWY-7730", "PWY-7403", "PWY-7821", "PWY-8229", "PWY-5955", "PWY-5292", "PWY-5499", "PWY-8384", "PWY-5021")
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% acetate_synthesis_pathways) %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Synthesis of Acetate")) %>%
+  
+  ggsave("graphs/humann/acetate_synthesis.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+```{r glutamine_synthesis}
+
+# well ok, there's none of these
+
+glutamine_synthesis_pathways <- c("AMMASSIM-PWY", "PWY-8291", "PWY-8294", "GLNSYN-PWY")
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% glutamine_synthesis_pathways) %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Synthesis of Glutamine")) %>%
+  
+  ggsave("graphs/humann/glutamine_synthesis.png", ., units = "px", width = 2400, height = 1400)
+  
+
+
+```
+
+```{r glutamine_consumption}
+
+glutamine_consumption_pathways <- c("PWY-6121", "PWY-6122", "PWY-6277", "AMMASSIM-PWY", "GLUTSYN-PWY", "GLUTAMINDEG-PWY", "PYRIDNUCSYN-PWY", "PYRIDNUCSAL-PWY", "PWY-7761", "ARGSYN-PWY", "PWY-5686", "PWY-6543", "PWY-7221", "ASPARAGINE-BIOSYNTHESIS", "HISTSYN-PWY", "TRPSYN-PWY", "TRNA-CHARGING-PWY", "UDPNAGSYN-PWY", "PWY-7176")
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% glutamine_consumption_pathways) %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Consumption of Glutamine")) %>%
+  
+  ggsave("graphs/humann/glutamine_consumption.png", ., units = "px", width = 2400, height = 1400)
+  
+
 
 ```
