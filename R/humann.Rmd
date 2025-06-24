@@ -478,5 +478,63 @@ glutamine_consumption_pathways <- c("PWY-6121", "PWY-6122", "PWY-6277", "AMMASSI
   ggsave("graphs/humann/glutamine_consumption.png", ., units = "px", width = 2400, height = 1400)
   
 
+```
+
+```{r histidine_consumption}
+
+histidine_consumption_pathways <- c("HISDEG-PWY", "PWY-5028", "PWY-5030", "HISHP-PWY")
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% histidine_consumption_pathways) %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Consumption of Histidine")) %>%
+  
+  ggsave("graphs/humann/histidine_consumption.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+```{r urocanate_hydratase_genes}
+
+# breaks down urocanate
+
+urocanate_hydratase_genes <- read_tsv("data/humann/urocanate_hydratase.tsv")
+
+(humann_prodigal_genefamilies %>% 
+    filter(`Gene Family` %in% paste0("UniRef90_", urocanate_hydratase_genes$Entry)) %>%
+  
+    ggplot(aes(x = `Gene Family`, y = `RPKs`)) + 
+      geom_bar(stat = "identity") + 
+      facet_wrap(. ~ SampleName) + 
+      coord_flip() + 
+    ggtitle("Gene Abundance - Urocanate Hydratase")) %>%
+  
+  ggsave("graphs/humann/urocanate_hydratase_genes.png", ., units = "px", width = 2400, height = 2800)
+
+
+```
+
+```{r histidine_ammonia_lyase_genes}
+
+# produces urocanate
+
+histidine_ammonia_lyase_genes <- read_tsv("data/humann/histidine_ammonia_lyase.tsv")
+
+(humann_prodigal_genefamilies %>% 
+    filter(`Gene Family` %in% paste0("UniRef90_", histidine_ammonia_lyase_genes$Entry)) %>%
+  
+    ggplot(aes(x = `Gene Family`, y = `RPKs`)) + 
+      geom_bar(stat = "identity") + 
+      facet_wrap(. ~ SampleName) + 
+      coord_flip() + 
+    ggtitle("Gene Abundance - Histidine Ammonia-Lyase")) %>%
+  
+  ggsave("graphs/humann/histidine_ammonia_lyase_genes.png", ., units = "px", width = 2400, height = 2800)
+
 
 ```
