@@ -400,41 +400,213 @@ ggplot(as.data.frame(humann_1kbp_shreds_mds[["points"]]), aes(x = MDS1, y = MDS2
 ```
 
 
-```{r butanoate_synthesis}
+```{r acetate_pathways}
 
-butanoate_synthesis_pathways <- c("PWY-8190", "PWY-5022", "P163-PWY", "GLUDEG-II-PWY", "CENTFERM-PWY", "PWY-5676", "P162-PWY", "PWY-5677")
+acetate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY66-21", "PWY66-161", "PWY66-162", "PWY-7387", "PWY-5641", "TOLUENE-DEG-DIOL-PWY", "TOLUENE-DEG-2-OH-PWY", "PWY-5754", "PWY-6431", "PWY-5665", "GLUAMCAT-PWY", "PWY-6906", "PWY0-1261", "PWY-7000", "PWY-7014", "PWY-7022", "PWY-8202", "PWY66-378", "PWY-5022", "PWY-5677", "PWY-7077", "PWY-7395", "PWY8J2-25", "PWY-8418", "PWY-7174", "PWY-8132", "PWY-5867", "PWY-5882", "PWY-7268", "PWY-5768", "P162-PWY", "PWY-8190", "PWYI-14", "PWY-8245", "PWY-5794", "PWY-6060", "PWY-7545", "PWY-7544", "PWY-4961", "PWY-8337", "PWY-5643", "PWY-7521", "PWY-7002", "PWY-6672", "PWY-8071", "PWY-5301", "PWY-8293", "PWY-7599", "P482-PWY", "PWY8J2-1", "PWY-8200", "PWY-6444", "PWY-7118", "PWY-6855", "PWY0-1309", "PWY-6038", "P2-PWY", "PWY-7376", "PWY-4741", "PWY-7401", "PWY-7274", "PWY-8453", "PWY-7712", "PWY-6056", "PWY-7855", "PWY-5883", "PWY-8408", "PWY-5708", "PWY-5859", "PWY-5835", "PWY-804", "PWY-7552", "PWY-6558", "PWY-8087", "PWY-5154", "CYSTSYN-PWY", "PWY-I9", "PWY-7870", "PWY-5075", "PWY-2941", "LYSDEGII-PWY", "GLUTORN-PWY", "PWY-8530", "PWY-6955", "PWY2B4Q-4", "NAGLIPASYN-PWY", "PWY-8245", "PWY-8073", "PWY2G6Z-2", "PWY-8283", "PWY-5967", "PWY-6399", "PWY-4985", "PWY-5270", "PWY1G-0", "PWY-7016", "PWY-8506", "PWY-7713", "PWY-7138", "P342-PWY", "PWY-6699", "PWY-7018", "P641-PWY", "PWY-7769", "PWY-6322", "P483-PWY", "PWY0-1609", "PWY-6464", "PWY-7774", "PWY-7775", "PWY-5929", "PWY-0", "PWY-7906", "PWY-6936", "SOPHOROSYLOXYDOCOSANOATE-DEG-PWY", "PWY-7730", "PWY-7403", "PWY-7821", "PWY-8229", "PWY-5955", "PWY-5292", "PWY-5499", "PWY-8384", "PWY-5021")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-5022", "PWY-5676", "P3-PWY", "P162-PWY", "PWY-8190", "PWY-5677", "P2-PWY", "P3-PWY", "PWY-6060"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-8086", "PWY0-1312", "P161-PWY", "P124-PWY", "PWY0-1477", "P3-PWY", "PWY-8015", "P163-PWY", "PWY-8377", "METH-ACETATE-PWY", "FERMENTATION-PWY", "PWY-8480", "P164-PWY", "PWY-5497", "PWY-5482", "PWY-5485", "PWY-8303", "PWY4LZ-257", "PWY-6672", "PWY-8328", "PWY0-1313", "PWY-7118", "PWY66-21", "PWY66-161", "PWY66-162", "PWY-8303", "PWY-5536", "PWY-7384", "PWY-5677", "PWY-7254", "PWY-5535", "PWY-8305", "PWY-5483", "PWY-5494", "PWY-5109", "ACETOACETATE-DEG-PWY", "PWY-6588", "PWY-7541", "PWY-6855", "PWY-5087", "PWY-5344", "PWY-7119")))
+
 
 (humann_prodigal_community_with_metadata %>% 
-  filter(Pathway %in% butanoate_synthesis_pathways) %>%
-  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
-    
-  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+  filter(Pathway %in% acetate_pathways$Pathway) %>%
+  left_join(acetate_pathways, by = "Pathway", multiple = "last") %>%
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
     geom_bar(stat = "identity") + 
     facet_wrap(. ~ SampleName) + 
     coord_flip() + 
-    ggtitle("Pathway Abundance - Synthesis of Butyrate")) %>%
+    ggtitle("Pathway Abundance - Acetate Pathways")) %>%
   
-  ggsave("graphs/humann/butyrate_synthesis.png", ., units = "px", width = 2400, height = 1400)
+  ggsave("graphs/humann/specific/SCFAs/acetate.png", ., units = "px", width = 2400, height = 2200)
   
 
 ```
 
 
-```{r acetate_synthesis}
+```{r propanoate_pathways}
 
-acetate_synthesis_pathways <- c("PWY66-21", "PWY66-161", "PWY66-162", "PWY-7387", "PWY-5641", "TOLUENE-DEG-DIOL-PWY", "TOLUENE-DEG-2-OH-PWY", "PWY-5754", "PWY-6431", "PWY-5665", "GLUAMCAT-PWY", "PWY-6906", "PWY0-1261", "PWY-7000", "PWY-7014", "PWY-7022", "PWY-8202", "PWY66-378", "PWY-5022", "PWY-5677", "PWY-7077", "PWY-7395", "PWY8J2-25", "PWY-8418", "PWY-7174", "PWY-8132", "PWY-5867", "PWY-5882", "PWY-7268", "PWY-5768", "P162-PWY", "PWY-8190", "PWYI-14", "PWY-8245", "PWY-5794", "PWY-6060", "PWY-7545", "PWY-7544", "PWY-4961", "PWY-8337", "PWY-5643", "PWY-7521", "PWY-7002", "PWY-6672", "PWY-8071", "PWY-5301", "PWY-8293", "PWY-7599", "P482-PWY", "PWY8J2-1", "PWY-8200", "PWY-6444", "PWY-7118", "PWY-6855", "PWY0-1309", "PWY-6038", "P2-PWY", "PWY-7376", "PWY-4741", "PWY-7401", "PWY-7274", "PWY-8453", "PWY-7712", "PWY-6056", "PWY-7855", "PWY-5883", "PWY-8408", "PWY-5708", "PWY-5859", "PWY-5835", "PWY-804", "PWY-7552", "PWY-6558", "PWY-8087", "PWY-5154", "CYSTSYN-PWY", "PWY-I9", "PWY-7870", "PWY-5075", "PWY-2941", "LYSDEGII-PWY", "GLUTORN-PWY", "PWY-8530", "PWY-6955", "PWY2B4Q-4", "NAGLIPASYN-PWY", "PWY-8245", "PWY-8073", "PWY2G6Z-2", "PWY-8283", "PWY-5967", "PWY-6399", "PWY-4985", "PWY-5270", "PWY1G-0", "PWY-7016", "PWY-8506", "PWY-7713", "PWY-7138", "P342-PWY", "PWY-6699", "PWY-7018", "P641-PWY", "PWY-7769", "PWY-6322", "P483-PWY", "PWY0-1609", "PWY-6464", "PWY-7774", "PWY-7775", "PWY-5929", "PWY-0", "PWY-7906", "PWY-6936", "SOPHOROSYLOXYDOCOSANOATE-DEG-PWY", "PWY-7730", "PWY-7403", "PWY-7821", "PWY-8229", "PWY-5955", "PWY-5292", "PWY-5499", "PWY-8384", "PWY-5021")
+propanoate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("2OXOBUTYRATECAT-PWY", "PWY-7554", "PWY-5736", "PWY-5055", "PWY-5148", "PWY-2724", "PWY-2501", "PWY-6803", "LIPASYN-PWY", "PWY-7277", "PWY3DJ-11281", "PWY-8052", "PWY-5142", "PWY-8051", "PWY-6483", "PWY-7783", "PWY-6857", "PWY3DJ-11470", "PWY-6861", "LIPAS-PWY", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-3941", "PWY0-42", "PWY-5747", "PWY-5104", "FA0-PWY", "PWY-5136", "PWY66-391", "PWY-7288", "PWY-2724", "PWY-2501", "PWY-7007", "PWY-7671", "PWY-7694"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-8086", "PWY-7384", "PWY0-43", "P108-PWY", "PWY-7013", "PWY-5437", "PWY-5494", "PWY-5109", "PWY-7119")))
+
 
 (humann_prodigal_community_with_metadata %>% 
-  filter(Pathway %in% acetate_synthesis_pathways) %>%
-  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
-    
-  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`)) + 
+  filter(Pathway %in% propanoate_pathways$Pathway) %>%
+  left_join(propanoate_pathways, by = "Pathway", multiple = "last") %>%
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
     geom_bar(stat = "identity") + 
     facet_wrap(. ~ SampleName) + 
     coord_flip() + 
-    ggtitle("Pathway Abundance - Synthesis of Acetate")) %>%
+    ggtitle("Pathway Abundance - Propanoate Pathways")) %>%
   
-  ggsave("graphs/humann/acetate_synthesis.png", ., units = "px", width = 2400, height = 1400)
+  ggsave("graphs/humann/specific/SCFAs/propanoate.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+
+```{r butanoate_pathways}
+
+butanoate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-8190", "PWY-5022", "GLUDEG-II-PWY", "CENTFERM-PWY", "PWY-5676", "P162-PWY", "PWY-5677")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("FAO-PWY", "PWY-5136", "PWY66-391", "PWY-7288", "PWY-2724", "PWY-2501", "PWY-7007", "PWY-7671", "PWY-7694"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("P163-PWY", "PWY-6588", "CENTFERM-PWY", "PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% butanoate_pathways$Pathway) %>%
+  left_join(butanoate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Butanoate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/SCFAs/butanoate.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+
+```{r pentanoate_pathways}
+
+pentanoate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-5148", "PWY-2724", "PWY-2501", "PWY-6803", "LIPASYN-PWY", "PWY-7277", "PWY3DJ-11281", "PWY-8052", "PWY-5142", "PWY-8051", "PWY-6483", "PWY-7783", "PWY-6857", "PWY3DJ-11470", "PWY-6861", "LIPAS-PWY", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("FAO-PWY", "PWY-5136", "PWY66-391", "PWY-7288", "PWY-2724", "PWY-2501", "PWY-7007", "PWY-7671", "PWY-7694"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% pentanoate_pathways$Pathway) %>%
+  left_join(pentanoate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Pentanoate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/SCFAs/pentanoate.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+
+```{r hexanoate_pathways}
+
+hexanoate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-5148", "PWY-2724", "PWY-2501", "PWY-6803", "LIPASYN-PWY", "PWY-7277", "PWY3DJ-11281", "PWY-8052", "PWY-5142", "PWY-8051", "PWY-8053", "PWY-6483", "PWY-7783", "PWY-6857", "PWY3DJ-11470", "PWY-6861", "LIPAS-PWY", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-7641", "PWY-8360", "PWY-5140", "FAO-PWY", "PWY-5136", "PWY66-391", "PWY-7288", "PWY-2724", "PWY-2501", "PWY-7007", "PWY-7671", "PWY-7694"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% hexanoate_pathways$Pathway) %>%
+  left_join(hexanoate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Hexanoate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/SCFAs/hexanoate.png", ., units = "px", width = 2400, height = 1400)
+  
+
+```
+
+
+```{r alanine_pathways}
+
+alanine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-6891", "PWY-7888", "PWY-7889", "PWY-7891", "PWY-7904", "PWYDQC-4", "PWY-7770", "PWY0-1021", "PWY-8452", "TRPCAT-PWY", "PWY-6309", "PWY-5651", "PWY-7907", "PWY-7717", "PWY-7765", "PWY-8164", "PWY-8165", "PWY-1822", "PWY-5736", "PWY-5468", "PWY-5963", "PWY-6823", "PWY0-1546", "PWY-8561", "PWY-6892", "PWY-6891", "PWY8J2-27", "PWY-7892", "PWY-7904", "PWY-8566", "PWY-7250", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-7907", "PWY-8117", "PWY-6495", "PWY-8528", "PWY-8527", "PWY-7769", "PWY-6322", "PWY-8381", "PWY-6519", "PWY-7147", "PWY-8203", "PWY-6387", "PWY-6386", "PWY-7953", "PWY-8528", "PWY-8527", "PWY-7769", "PWY-6322", "PWY-7907", "PWY-7543", "PWY-6578", "PWY-8293", "PWY-8494", "PWY-8492", "PWY-8496", "PWY-8361", "PWY-8489", "PWY-7626", "PWY-8443", "PWY-6682", "PWY-7735", "PWY-6495", "PWY-7542", "PWY-6219", "PWY-5254", "PWY-8495", "PWY-8527", "PWY-6322", "PWY-7351", "PWY-7671", "PWY-8381", "TRNA-CHARGING-PWY", "PWY-7694", "PWY-4041", "PWY66-375", "PWY-8355", "PWY-7701", "PWY-8455", "PWY-7547", "PWY-7510", "PWY-7649"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-7383", "PWY-7115", "PWY-7117", "ALANINE-SYN2-PWY", "ALACAT2-PWY", "ALANINE-DEG3-PWY", "PWY-8189", "PWY-8188", "PWY-8072", "PWY-7383", "PWY-8040", "PWY-8443", "ALADEG-PWY", "PWY-6839", "PHOSPHONOTASE-PWY", "PWY-6832", "PWY-8529", "PWY-7275", "PWY-5079", "PWY-3941", "PWY-1781", "PWY-7115", "PWY-7117", "PWY-8493", "PWY3O-4108", "PWY-5748", "PWY-6473", "PWY-5710", "PWY-7880", "GLYSYN-ALA-PWY", "PWY-5826", "PWY-7387", "ALANINE-VALINESYN-PWY", "PWY1-2", "PWY-5742", "PWY-5031", "PWY-7275", "PWY-8493", "PWY-5324", "PWY-8011", "PWY-3", "PWY-6456", "PWY-5940", "PWY-1263", "PWY-5499", "PWYQT-4450", "PWY-4002", "PWY-1186", "PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% alanine_pathways$Pathway) %>%
+  left_join(alanine_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Alanine Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/alanine.png", ., units = "px", width = 2800, height = 1400)
+  
+
+```
+
+
+```{r arginine_pathways}
+
+arginine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-7052", "PWY-6422", "NOPALINEDEG-PWY", "OCTOPINEDEG-PWY", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY0-1299", "PWY0-823", "ARGDEG-III-PWY", "PWY-40", "PWY-43", "PWY-6834", "PWY2PN3-14", "GLYCGREAT-PWY", "PWY-8045", "PWY-7693", "PWY-8506", "ARGDEGRAD-PWY", "PWY-8187", "PWY-6344", "PWY-8492", "PWY-8496", "PWY-6853", "PWY-7126", "ARGDEG-V-PWY", "PWY-8532", "PWY-4981", "PWY2PN3-13", "PWY-6845", "PWY-4983", "PWY-7860", "PWY-8531", "PWY-8450", "PWY-7351", "PWY-8451", "PWY-7570", "PWY-5679", "PWY-7052", "PWY-8045", "PWY-7274", "PWY-6853", "PWY-7770", "PWY-8529", "AST-PWY", "ARGDEG-IV-PWY", "PWY-8498", "PWY-6845", "PWY-7860", "PWY-7797", "PWY-7600", "PWY-6409", "PWY-7510", "PWY-5940", "TRNA-CHARGING-PWY", "PWY-7987", "PWY-4041", "PWY66-375", "PWY-8355", "PWY-7701", "PWY-8455", "PWY-7547", "PWY-7649"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-6922", "ARGASEDEG-PWY", "ARG-PRO-PWY", "ARG-GLU-PWY", "CITRULBIO-PWY", "PWY-46", "PWY-4984", "ARGSYN-PWY", "ARGSYNBSUB-PWY", "PWY-5154", "PWY-7400", "PWY-4983", "PWY2PN3-13", "PWY-6511", "PWY-5024", "PWY-5742", "PWY-7523", "PWYQT-4450", "PWY-4002", "PWY-1186", "PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% arginine_pathways$Pathway) %>%
+  left_join(arginine_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Arginine Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/arginine.png", ., units = "px", width = 2800, height = 1400)
+  
+
+```
+
+
+```{r asparagine_pathways}
+
+asparagine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("ASPSYNII-PWY", "ASPARAGINE-BIOSYNTHESIS", "ASPARAGINESYN-PWY", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("ASPARAGINE-DEG1-PWY", "ASPASN-PWY", "PWY-8402", "PWY-8117", "TRNA-CHARGING-PWY", "PWY-7694", "PWY-4041", "PWY66-375", "PWY-8355", "PWY-7701", "PWY-8455", "PWY-7510"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-4002", "PWYQT-4450", "PWY-1186", "PWY-7119")))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% asparagine_pathways$Pathway) %>%
+  left_join(asparagine_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Asparagine Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/asparagine.png", ., units = "px", width = 2800, height = 1400)
+  
+
+```
+
+
+```{r aspartate_pathways}
+
+aspartate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-7855", "PWY-8419", "ASPARAGINE-DEG1-PWY", "ASPASN-PWY", "PWY-8402", "PWY-8454", "ASPSYNII-PWY", "PWY-7052", "PWY-1962", "PWY-5784", "ASPARAGINE-DEG1-PWY-1", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-6160", "PWY-8296", "PWY-8088", "P101-PWY", "PWY-7153", "HOMOSERSYN-PWY", "DAPLYSINESYN-PWY", "PWY-2941", "PWY-2942", "PWY-5097", "PWY-7977", "PWY-6562", "PWY-8179", "PWY-6559"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c()))
+
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% aspartate_pathways$Pathway) %>%
+  left_join(aspartate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Aspartate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/aspartate.png", ., units = "px", width = 2800, height = 1400)
   
 
 ```
@@ -482,7 +654,7 @@ glutamine_consumption_pathways <- c("PWY-6121", "PWY-6122", "PWY-6277", "AMMASSI
 
 ```{r histidine_consumption}
 
-histidine_consumption_pathways <- c("HISDEG-PWY", "PWY-5028", "PWY-5030", "HISHP-PWY")
+histidine_consumption_pathways <- c("HISDEG-PWY", "HISTDEG-PWY", "PWY-5028", "PWY-5030", "PWY-5031", "HISHP-PWY")
 
 (humann_prodigal_community_with_metadata %>% 
   filter(Pathway %in% histidine_consumption_pathways) %>%
