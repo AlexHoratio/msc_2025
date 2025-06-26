@@ -591,9 +591,8 @@ asparagine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("ASPSYNII-P
 ```{r aspartate_pathways}
 
 aspartate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-7855", "PWY-8419", "ASPARAGINE-DEG1-PWY", "ASPASN-PWY", "PWY-8402", "PWY-8454", "ASPSYNII-PWY", "PWY-7052", "PWY-1962", "PWY-5784", "ASPARAGINE-DEG1-PWY-1", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
-  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-6160", "PWY-8296", "PWY-8088", "P101-PWY", "PWY-7153", "HOMOSERSYN-PWY", "DAPLYSINESYN-PWY", "PWY-2941", "PWY-2942", "PWY-5097", "PWY-7977", "PWY-6562", "PWY-8179", "PWY-6559"))) %>%
-  rbind(data.frame(Type = c("Both"), Pathway = c()))
-
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-6160", "PWY-8296", "PWY-8088", "P101-PWY", "PWY-7153", "HOMOSERSYN-PWY", "DAPLYSINESYN-PWY", "PWY-2941", "PWY-2942", "PWY-5097", "PWY-7977", "PWY-6562", "PWY-8179", "PWY-6559", "PWY-1962", "PWY-1981", "PWY-2021", "PWY-5797", "PWY-5811", "PWY-6219", "PWY-5784", "ARGSYN-PWY", "ARGSYNBSUB-PWY", "PWY-5154", "PWY-7400", "PWY-4983", "PWY2PN3-13", "PWY-4984", "PWY-6123", "PWY-6124", "PWY-7234", "PYRIDNUCSYN-PWY", "PWY-5316", "PWY-7342", "PWY-5686", "PWY-7790", "PWY-7791", "PWY-5155", "PWY-8526", "PWY-7219", "PWY-5", "PWY-7052", "PWY-8289", "ASPARAGINE-BIOSYNTHESIS", "ASPARAGINESYN-PWY", "PWY490-4", "PWY-8498", "PWY-8352", "PWY-8277", "PWY-8295", "PWY-8563", "PWY-6148", "PWY-6720", "TRNA-CHARGING-PWY", "PWY-4041", "PWY66-375", "PWY-8355", "PWY-7701", "PWY-8455", "PWY-7547", "PWY-7510", "PWY-7649"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-7383", "PWY-7115", "PWY-7117", "ASPARTATESYN-PWY", "ASPARTATE-DEG1-PWY", "GLUTDEG-PWY", "MALATE-ASPARTATE-SHUTTLE-PWY", "PWY-8560", "PWY-8291", "PWY-8294", "PWY-8419", "GLUTDEG-PWY", "ASPASN-PWY", "PWY-3462", "PWY-3461", "PWY-6120", "PWY-7115", "PWY-7117", "PWY-6511", "PWYQT-4450", "PWY-4002", "PWY-1186", "PWY-7119")))
 
 (humann_prodigal_community_with_metadata %>% 
   filter(Pathway %in% aspartate_pathways$Pathway) %>%
