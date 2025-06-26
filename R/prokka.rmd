@@ -37,12 +37,12 @@ colnames(cog_fun) <- c("Function", "Functional Group", "Hex", "Description")
 
 ```{r get_prokka_all_products}
 
-prokka_r003 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R003/")
-prokka_r004 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R004/")
-prokka_r005 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R005/")
-prokka_r007 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R007/")
-prokka_r012 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R012/")
-prokka_r018 <- get_gene_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R018/")
+prokka_r003 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R003/")
+prokka_r004 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R004/")
+prokka_r005 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R005/")
+prokka_r007 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R007/")
+prokka_r012 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R012/")
+prokka_r018 <- get_gene_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R018/")
 
 prokka_all <- list(
   prokka_r003,
@@ -59,12 +59,12 @@ prokka_all[is.na(prokka_all)] <- 0
 
 ```{r get_prokka_kegg}
 
-prokka_kegg_r003 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R003")
-prokka_kegg_r004 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R004")
-prokka_kegg_r005 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R005")
-prokka_kegg_r007 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R007")
-prokka_kegg_r012 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R012")
-prokka_kegg_r018 <- get_kegg_counts_from_all_bins("data/loma/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R018")
+prokka_kegg_r003 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R003")
+prokka_kegg_r004 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R004")
+prokka_kegg_r005 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R005")
+prokka_kegg_r007 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R007")
+prokka_kegg_r012 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R012")
+prokka_kegg_r018 <- get_kegg_counts_from_all_bins("data/RAMAN_PROKKA/PROKKA2KEGG/RAMAN_R018")
 
 prokka_kegg_all <- list(
   prokka_kegg_r003,
@@ -81,12 +81,12 @@ prokka_kegg_all[is.na(prokka_kegg_all)] <- 0
 
 ```{r get_prokka_cog}
 
-prokka_cog_r003 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R003/")
-prokka_cog_r004 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R004/")
-prokka_cog_r005 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R005/")
-prokka_cog_r007 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R007/")
-prokka_cog_r012 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R012/")
-prokka_cog_r018 <- get_cog_counts_from_all_bins("data/loma/RAMAN_PROKKA/RAMAN_R018/")
+prokka_cog_r003 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R003/")
+prokka_cog_r004 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R004/")
+prokka_cog_r005 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R005/")
+prokka_cog_r007 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R007/")
+prokka_cog_r012 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R012/")
+prokka_cog_r018 <- get_cog_counts_from_all_bins("data/RAMAN_PROKKA/RAMAN_R018/")
 
 prokka_cog_all <- list(
   prokka_cog_r003,
@@ -456,11 +456,11 @@ prokka_cog_function_sums_boxplot <- ggplot(prokka_cog_function_sums_percentage, 
     axis.text.y = element_markdown(face="bold", size = 8),
     axis.text.x = element_markdown(size = 12),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
     panel.grid.major.y = element_line(colour="#00000022"),
     panel.grid.major.x = element_line(colour="#00000000"),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
 )
@@ -490,17 +490,17 @@ prokka_cog_function_mean_annotations_boxplot <- ggplot(prokka_cog_mean_functions
     axis.text.y = element_markdown(face="bold", size = 8),
     axis.text.x = element_markdown(size = 12),
     strip.text = element_markdown(face = "bold", size = 12),
-    panel.background = element_rect(fill = '#fff7ef'),
+    panel.background = element_rect(fill = '#fff7ef00'),
     panel.grid.major.y = element_line(colour="#00000022"),
     panel.grid.major.x = element_line(colour="#00000000"),
-    plot.background = element_rect(fill = '#fff7ef'),
-    legend.background = element_rect(fill = '#fff7ef'),
+    plot.background = element_rect(fill = '#fff7ef00'),
+    legend.background = element_rect(fill = '#fff7ef00'),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
 )
 
 prokka_cog_function_mean_annotations_boxplot
-ggsave("graphs/prokka/prokka_cog_function_mean_annotations_boxplot.png", prokka_cog_function_mean_annotations_boxplot, width = 3000, height = 1400, units = "px")
+ggsave("graphs/prokka/prokka_cog_function_mean_annotations_boxplot.jpg", prokka_cog_function_mean_annotations_boxplot, width = 3000, height = 1400, units = "px")
 
 ```
 
