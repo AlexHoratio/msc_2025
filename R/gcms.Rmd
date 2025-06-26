@@ -58,6 +58,7 @@ openchrom_aligned <- align_chromatograms(data = openchrom_raw,
   rt_col_name = "RT",
   min_diff_peak2peak = 0.05,
   max_diff_peak2peak = 0.05,
+  delete_single_peak = TRUE
 )
 
 ```
@@ -128,7 +129,6 @@ openchrom_normalized_specbins <- openchrom_normalized %>%
   add_column(SampleGroup = str_extract(rownames(openchrom_normalized), "[R]+[0-9]+"), .before = c(2))
 
 write_csv(openchrom_normalized_specbins, "data/gcms/specbins.csv")
-
 
 
 ```
