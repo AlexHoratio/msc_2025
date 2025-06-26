@@ -633,6 +633,29 @@ cysteine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-801", "H
 
 ```
 
+
+```{r glutamate_pathways}
+
+glutamate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PYRIDNUCSYN-PWY", "PWY-8352", "PWY-8277", "PWY-5653", "PWY-8511", "PWY-5381", "PYRIDNUCSAL-PWY", "PWY-7761", "PWY30-4107", "ARGSYN-PWY", "ARGSYNBSUB-PWY", "PWY-5154", "PWY-7400", "PWY2PN3-13", "PWY-5686", "PWY-7790", "PWY-7791", "AMMASSIM-PWY", "PWY-5921", "PWY490-4", "CITRULBIO-PWY", "GLUTSYN-PWY", "GLUTAMINDEG-PWY", "PWY-6984", "PWY-8346", "PWY-4341", "PWY-6549", "PWY-6749", "PWY-8013", "UDPNAGSYN-PWY", "UDPNACETYLGALSYN-PWY", "PWY-6661", "PWY-5958", "TRPSYN-PWY", "PWY-6121", "PWY-6122", "PWY-6277", "AMMASSIM-PWY", "GLUTSYN-PWY", "GLUTAMINEFUM-PWY", "PWY-6853", "ARGASEDEG-PWY", "PROUT-PWY", "PWY-7176", "PWY-7185", "PWY-7177", "BETA-ALA-DEGRADATION-I-PWY", "PWY-8120", "PWY-4041", "PWY-7942", "PWY-6543", "PWY-8032", "PWY-7861", "PWY66-425", "PWY-6963", "GLUGLNSYN-PWY", "AMMASSIM-PWY", "GLUTSYN-PWY", "PWY-8382", "PWY-5770", "PWY-4061", "PWY-6842", "PWY-5265", "PWY-6471", "PWY-5912", "PWY-7733", "PWY-8276", "PWY-7112", "PWY-7811", "PWY-7054", "PWY-8301", "PWY-7962", "PWY-5706", "PWY-6533", "PWY-8397", "CAMALEXIN-SYN", "PWY-7377", "PWY-7376", "PWY-8512", "PWY-8453", "PWY-7706", "PWY-7255", "PWY-5196", "PWY-8001", "PWY-7025", "PWYQT-4471", "PWYQT-4475", "PWY-1187", "PWYQT-4474", "PWY-2821", "PWTQT-4473", "PWYQT-4472", "PWY-601", "PWY-7901", "PWY-2161B", "PWY-5921", "PWY-7559", "PWY-6842", "PWY-7221", "PWYQT-4477", "PWY-5784", "PWY-5736", "AST-PWY", "ASPARAGINE-BIOSYNTHESIS", "PWY490-4", "HISTSYN-PWY", "HISDEG-PWY", "PWY-5028", "PWY-5030", "PWY-5103", "PWY-5075", "LYSINE-DEG1-PWY", "PWY-6309", "PWY-7614", "PWY-6965", "PWY0-1546", "P621-PWY", "PWY-5707", "PWY0-1221", "PWY-6409", "PWY-6466", "PWY-5297", "PWY-8229", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c(""))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c()))
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% glutamate_pathways$Pathway) %>%
+  left_join(glutamate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Glutamate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/glutamate.png", ., units = "px", width = 2800, height = 1400)
+  
+
+```
+
 ```{r glutamine_synthesis}
 
 # well ok, there's none of these
