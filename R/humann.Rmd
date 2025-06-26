@@ -610,6 +610,29 @@ aspartate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-7855", 
 
 ```
 
+
+```{r cysteine_pathways}
+
+cysteine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-801", "HOMOCYSDEGR-PWY", "PWY-I9", "PWY-4041", "PWY-7559", "PWY8J2-25", "PWY-8418", "PWY-8010", "PWY-8009", "PWY-6577", "CYSTSYN-PWY", "PWY-6308", "PWY-7289", "PWY-7870", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-8539", "PWY-7986", "PWY-8117", "PWY-8450", "PWY-6408", "PWY-7737", "PWY-6891", "PWY-7888", "PWY-7889", "PWY-7891", "PWY-7904", "PWY-7986", "PWY-8358", "PWY-8343", "PWY-7255", "GLUTATHIONESYN-PWY", "PWY-6840", "PWY-8539", "PWY-8540", "PWY-6408", "PWY-7986", "PWY-8361", "PWY-8360", "COA-PWY", "PWY-8342", "PWY-7851", "PWY-7850", "PWY-801", "HOMOSER-METSYN-PWY", "PWY66-426", "LCYSDEG-PWY", "PWY0-1021", "PWY-8452", "CYSTEINE-DEG-PWY", "PWY-5331", "PWY-8164", "PWY8J2-25", "PWY-8523", "PWY-8397", "PWY8J2-1", "PWY-8165", "PWY-7735", "PWY-7550", "PWY-7913", "PWY-7690", "PWY66-426", "PWYQT-4476", "PWY-5629", "PWY-8540", "LCYSDEG-PWY", "PWY-702", "PWY-5963", "PWY-6823", "PWY1G-0", "PWY-8561", "PWY-7917", "PWY-6408", "PWY-8359", "PWY-6892", "PWY-6891", "PWY-7737", "TRNA-CHARGING-PWY", "PWY8J2-27", "PWY-7892", "PWY-7904", "PWY-6407", "PWY-8566", "PWY-7250", "PWY-4041", "PWY66-375", "PWY-8355", "PWY-7701", "PWY-8455", "PWY-7547", "PWY-7510", "PWY-7649"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-801", "HOMOCYSDEGR-PWY", "PWY-I9", "PWY-4041", "PWY-7559", "PWY8J2-25", "PWY-8418", "PWY-8010", "PWY-8009", "PWY-6577", "CYSTSYN-PWY", "PWY-6308", "PWY-7289", "PWY-7870", "PWY-6053", "PWY-6854", "PWY-1186", "PWY-6054", "PWY-4041", "PWY-8455", "PWY-7465", "PWY-7269", "PWY-7367")))
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% cysteine_pathways$Pathway) %>%
+  left_join(cysteine_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Cysteine Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/AminoAcids/cysteine.png", ., units = "px", width = 2800, height = 1400)
+  
+
+```
+
 ```{r glutamine_synthesis}
 
 # well ok, there's none of these
