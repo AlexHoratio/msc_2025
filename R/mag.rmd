@@ -15,6 +15,7 @@ library(plyr)
 library(tidyverse)
 library(ggtext)
 library(cowplot)
+library(plotly)
 
 ```
 
@@ -656,5 +657,32 @@ coverm_species <- ggplot(all_species_proportions, aes(x = Assembler, y = `Relati
 coverm_species
 #plotly_build(coverm_species)
 htmlwidgets::saveWidget(as_widget(plotly_build(coverm_species)), "graphs/plotly/species.html")
+
+```
+
+
+```{r get_krakenuniq_unbinned_contigs}
+
+krakenuniq_unbinned_contigs <- data.frame()
+
+for (filename in list.files("data/mag/krakenuniq_unbinned_contigs")) {
+  kuniq_report <- read_tsv(paste0("data/mag/krakenuniq_unbinned_contigs/", filename), col_names = TRUE, skip = 2)
+  kuniq_report <- kuniq_report %>%
+    add_column(Assembler = str_extract(filename, "[A-Z]+")) %>%
+    add_column(SampleName = str_extract(filename, "R[0-9]+"))
+  
+  if (length(krakenuniq_unbinned_contigs) == 0) {
+    krakenuniq_unbinned_contigs <- kuniq_report
+  } else {
+    krakenuniq_unbinned_contigs <- rbind(krakenuniq_unbinned_contigs, kuniq_report)
+  }
+}
+
+```
+
+```{r graph_unbinned_contigs}
+
+plotly_build(ggplot(filter(krakenuniq_unbinned_contigs, taxReads != 0), aes(x = Assembler, y = `%`, fill = taxName)) + 
+  geom_bar(stat = "identity", position = "fill"))
 
 ```
