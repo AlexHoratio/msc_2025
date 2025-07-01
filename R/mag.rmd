@@ -81,23 +81,44 @@ visualize_mags <- ggplot(dastool_gtdb[dastool_gtdb$SCG_completeness > 95, ] %>% 
 visualize_mags
 
 ```
+```{r combine_mag_and_loma}
+#requires busco_all from busco.rmd !!
 
+mag_and_loma <- data.frame(
+  SampleName = character(),
+  Bin = character(),
+  Assembler = character(),
+  Completeness = numeric(),
+  Contigs = numeric(),
+  N50 = numeric(),
+  MIMAG = character()
+)
+
+mag_and_loma <- rbind(mag_and_loma,
+                      busco_all[busco_all$Complete > 50, c("SampleName", "Bin", "Complete", "Contigs", "Contig N50", "MIMAG")] %>%
+                        rename(c("Completeness" = "Complete", "N50" = "Contig N50")) %>%
+                        add_column(Assembler = "LOMA"),
+                      dastool_gtdb[, c("SampleName", "Bin", "Assembler", "SCG_completeness", "contigs", "N50", "MIMAG")] %>%
+                        rename(c("Completeness" = "SCG_completeness", "Contigs" = "contigs")))
+
+
+```
 
 ```{r boxplot_of_completeness}
 
-nfmag_boxplot_completeness <- ggplot(dastool_gtdb, aes(x = `SampleName`, y=SCG_completeness, fill=SampleName)) +
-  geom_boxplot(alpha = 0.8, show.legend = FALSE) + 
-  scale_y_continuous(breaks = seq(0, 150, 20)) + 
-  expand_limits(y = c(0, 100)) +
+nfmag_boxplot_completeness <- ggplot(transform(mag_and_loma, Assembler = factor(Assembler, levels = c("LOMA", "FLYE", "METAMDBG"))), aes(x = `SampleName`, y=Completeness)) +
+  geom_boxplot(show.legend = FALSE, colour="black", fill="grey") + 
+  scale_y_continuous(breaks = seq(0, 150, 10)) + 
+  expand_limits(y = c(50, 100)) +
   scale_fill_brewer(palette = "Set1") + 
-  facet_wrap(. ~ Assembler) +
+  facet_wrap(. ~ Assembler, labeller = as_labeller(c("LOMA" = "metaFlye (LOMA)", "FLYE" = "metaFlye (nf-core/mag)", "METAMDBG" = "nanoMDBG (nf-core/mag)"))) + 
   xlab("") +
   ylab("Completeness (%)") +
   theme_classic() +
   theme(
-    axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 14),
-    axis.title.x = element_markdown(size = 12),
+    axis.text.y = element_markdown(size = 12),
+    axis.text.x = element_markdown(size = 11),
+    axis.title.x = element_markdown(size = 10),
     axis.title.y = element_markdown(size = 12),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
@@ -155,24 +176,24 @@ ggsave("graphs/nfmag/completeness_histogram.png", completeness)
 #  bin_count = as.vector(table(dastool_gtdb$SampleName))
 #)
 
-dastool_count_bins <- dastool_gtdb %>%
+count_bins <- mag_and_loma %>%
   dplyr::count(SampleName, Assembler)
 
-nfmag_number_of_bins <- ggplot(dastool_count_bins, aes(x = SampleName, y = n)) + 
+nfmag_number_of_bins <- ggplot(transform(count_bins, Assembler = factor(Assembler, levels = c("LOMA", "FLYE", "METAMDBG"))), aes(x = SampleName, y = n)) + 
   geom_bar(stat="identity", colour = "black", show.legend = FALSE, fill="grey") +
-  geom_text(label = dastool_count_bins$n, size = 6, vjust = -0.2) +
+  geom_text(label = count_bins$n, size = 6, vjust = -0.2) +
  # scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
   ylab("Total \\# of Genome Bins") +
   xlab("") +
-  expand_limits(y = c(0, 300)) +
+  expand_limits(y = c(0, 160)) +
   theme_classic() +
-  facet_wrap(. ~ Assembler) + 
+  facet_wrap(. ~ Assembler, labeller = as_labeller(c("LOMA" = "metaFlye (LOMA)", "FLYE" = "metaFlye (nf-core/mag)", "METAMDBG" = "nanoMDBG (nf-core/mag)"))) + 
   theme(
-    axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 14),
+    axis.text.y = element_markdown(size = 12),
+    axis.text.x = element_markdown(size = 11),
     axis.title.x = element_markdown(size = 10),
-    axis.title.y = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 12),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef00'),
@@ -182,8 +203,8 @@ nfmag_number_of_bins <- ggplot(dastool_count_bins, aes(x = SampleName, y = n)) +
     legend.title = element_blank()
   )
 
+ggsave("graphs/nfmag/number_of_bins.png", nfmag_number_of_bins, units = "px", width = 2600, height = 1000)
 nfmag_number_of_bins
-ggsave("graphs/nfmag/number_of_bins.png", nfmag_number_of_bins)
 
 ```
 
@@ -193,24 +214,24 @@ ggsave("graphs/nfmag/number_of_bins.png", nfmag_number_of_bins)
 #dastool_avg_bins_n50 <- aggregate(dastool_gtdb, by = list(dastool_gtdb$SampleName), FUN = "mean")[, c("Group.1", "N50")] %>%
 #  setNames(c("SampleName", "N50"))
 
-dastool_avg_bins_n50 <- ddply(dastool_gtdb, c("SampleName", "Assembler"), summarise, N50 = mean(N50))
+#dastool_avg_bins_n50 <- ddply(dastool_gtdb, c("SampleName", "Assembler"), summarise, N50 = mean(N50))
 
-bin_n50 <- ggplot(dastool_avg_bins_n50, aes(x = SampleName, y = round(N50/1000), fill = SampleName)) + 
-  geom_bar(stat="identity", show.legend = FALSE, colour="black", fill="grey") +
-  geom_text(label = round(dastool_avg_bins_n50$N50/1000), size = 6, vjust = -0.2) +
+bin_n50 <- ggplot(transform(mag_and_loma, Assembler = factor(Assembler, levels = c("LOMA", "FLYE", "METAMDBG"))), aes(x = SampleName, y = round(N50/1000), fill = SampleName)) + 
+  geom_boxplot(show.legend = FALSE, colour="black", fill="grey") +
+  #geom_text(label = round(dastool_avg_bins_n50$N50/1000), size = 6, vjust = -0.2) +
   scale_fill_brewer(palette = "Set1") +
   scale_x_discrete(labels = c("R003", "R004", "R005", "R007", "R012", "R018")) +
-  scale_y_continuous(labels = (format_si())) +
-  ylab("Average Bin N50 (Kbp)") +
+  scale_y_continuous(breaks = seq(0, 7000, 1000), labels = (format_si())) +
+  ylab("Bin N50 (b.p.)") +
   xlab("") +
   expand_limits(y = c(0, 2200)) +
   theme_classic() +
-  facet_wrap(. ~ Assembler) +
+  facet_wrap(. ~ Assembler, labeller = as_labeller(c("LOMA" = "metaFlye (LOMA)", "FLYE" = "metaFlye (nf-core/mag)", "METAMDBG" = "nanoMDBG (nf-core/mag)"))) + 
   theme(
-    axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 14),
+    axis.text.y = element_markdown(size = 12),
+    axis.text.x = element_markdown(size = 11),
     axis.title.x = element_markdown(size = 10),
-    axis.title.y = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 12),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef00'),
@@ -221,7 +242,16 @@ bin_n50 <- ggplot(dastool_avg_bins_n50, aes(x = SampleName, y = round(N50/1000),
   )
 
 bin_n50
-ggsave("graphs/nfmag/bin_n50.png", bin_n50)
+ggsave("graphs/nfmag/bin_n50.png", bin_n50, units = "px", width = 2600, height = 1000)
+
+```
+
+```{r n50_and_quant_panel}
+
+n50_and_quant_panel <- plot_grid(bin_n50, nfmag_boxplot_completeness, mimag_barchart, labels = c("A", "B", "C"), ncol = 1)
+
+ggsave("graphs/nfmag/n50_and_quant_panel.png", n50_and_quant_panel, units = "px", width = 2600, height = 2400)
+n50_and_quant_panel
 
 ```
 
@@ -257,24 +287,24 @@ dastool_gtdb_abundances <- inner_join(
 ```{r barchart_mimags}
 
 all_bins_mimags <- rbind(
-  dastool_gtdb[dastool_gtdb$Assembler == "METAMDBG", c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = c("nf-core/mag (METAMDBG)")),
-  dastool_gtdb[dastool_gtdb$Assembler == "FLYE", c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = c("nf-core/mag (FLYE)")),
-  busco_all[busco_all$Complete > 50, c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = "LOMA")
+  dastool_gtdb[dastool_gtdb$Assembler == "METAMDBG", c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = c("nanoMDBG (nf-core/mag)")),
+  dastool_gtdb[dastool_gtdb$Assembler == "FLYE", c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = c("metaFlye (nf-core/mag)")),
+  busco_all[busco_all$Complete > 50, c("SampleName", "Bin", "MIMAG")] %>% add_column(Pipeline = "metaFlye (LOMA)")
 )
 
-mimag_barchart <- ggplot(all_bins_mimags, aes(x = SampleName, fill = MIMAG)) + 
-  geom_bar() + 
-  facet_wrap(. ~ Pipeline) +
+mimag_barchart <- ggplot(transform(all_bins_mimags, Pipeline = factor(Pipeline, levels = c("metaFlye (LOMA)", "metaFlye (nf-core/mag)", "nanoMDBG (nf-core/mag)"))), aes(x = SampleName, fill = MIMAG)) + 
+  geom_bar(color = "black") + 
+  facet_wrap(. ~ Pipeline) + 
   xlab("") + 
-  ylab("Number of Genomic Bins (>50% Complete)") +
+  ylab("Number of Genomic Bins") +
   guides(fill = guide_legend("MIMAG Classification:", ncol = 3)) +
   scale_fill_discrete(labels = c("High-Quality Draft", "Medium-Quality Draft", "Low-Quality Draft")) +
   theme_classic() +
   theme(
-    axis.text.y = element_markdown(size = 16),
-    axis.text.x = element_markdown(size = 10),
+    axis.text.y = element_markdown(size = 12),
+    axis.text.x = element_markdown(size = 11),
     axis.title.x = element_markdown(size = 10),
-    axis.title.y = element_markdown(size = 10),
+    axis.title.y = element_markdown(size = 14),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
     panel.background = element_rect(fill = '#fff7ef00'),
