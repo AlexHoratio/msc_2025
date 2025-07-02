@@ -16,6 +16,11 @@ library(tidyverse)
 library(ggtext)
 library(cowplot)
 library(plotly)
+library(RColorBrewer)
+library(pheatmap)
+library(dendextend)
+library(ggplotify)
+library(patchwork)
 
 ```
 
@@ -660,8 +665,16 @@ kmer_species_proportions <- kmer_species_proportions %>%
 all_species_proportions <- coverm_gtdb[, c("Species", "Assembler", "Relative Abundance", "SampleName")] %>% 
   filter(str_trim(Species) != "") %>%
   aggregate(. ~ Species + Assembler + SampleName, FUN = sum) %>% 
-  add_column(Approach = c("MAGs")) %>% 
-  rbind(kmer_species_proportions)
+  add_column(Approach = c("MAGs"))# %>% 
+ # rbind(kmer_species_proportions)
+
+remainder <- aggregate(. ~ Assembler+SampleName, all_species_proportions[all_species_proportions$`Relative Abundance` <= 3,][, -c(1, 5)], sum) %>%
+  add_column(Species=c("<3% Species")) %>%
+  add_column(Approach = c("NA"))
+
+all_species_proportions <- all_species_proportions %>%
+  filter(`Relative Abundance` > c(3)) %>%
+  rbind(remainder)
 
 coverm_species <- ggplot(all_species_proportions, aes(x = Assembler, y = `Relative Abundance`, fill = `Species`)) + 
   geom_bar(stat = "identity", position = "fill") +
@@ -671,8 +684,10 @@ coverm_species <- ggplot(all_species_proportions, aes(x = Assembler, y = `Relati
   ylab("") +
   #ggtitle("<b>Relative Abundance of MAGs, by Species</b>") +
   labs(fill = "Species") +
+  scale_fill_manual(values = colorRampPalette(brewer.pal(8, "Set3"))(length(unique((all_species_proportions$Species))))) +
   scale_y_continuous(labels = scales::percent, breaks=c(0, 1)) +
-  scale_x_discrete(labels = c("Bracken (HRGMv2)", "Bracken (PlusPF)", "Centrifuger (NCBI nt/nr)", "metaFlye (nf-core/mag)", "nanoMDBG (nf-core/mag)")) +
+  scale_x_discrete(labels = c("metaFlye (nf-core/mag)", "nanoMDBG (nf-core/mag)")) +
+  guides(fill = guide_legend(ncol = 3)) +
   theme_classic() +
   theme(
     axis.text.y = element_markdown(face="bold", size = 14),
@@ -680,16 +695,75 @@ coverm_species <- ggplot(all_species_proportions, aes(x = Assembler, y = `Relati
     plot.title = element_markdown(hjust = 0.5),
     panel.spacing = unit(1, "lines"),
     strip.text = element_markdown(face = "bold", size = 12),
-    legend.margin = margin(l = -20, t = -20),
+    legend.margin = margin(l = -80, t = -20),
     legend.text = element_markdown(size = 12),
     legend.title = element_blank(),
     legend.position = "bottom",
   )
 
-ggsave("graphs/nfmag/compare_species.png", coverm_species, units = "px", width = 2900, height = 1400)
+ggsave("graphs/nfmag/compare_species.png", coverm_species, units = "px", width = 2900, height = 1800)
 coverm_species
 #plotly_build(coverm_species)
 htmlwidgets::saveWidget(as_widget(plotly_build(coverm_species)), "graphs/plotly/species.html")
+
+```
+
+```{r species_heatmap}
+
+heatmap_species_proportions <- coverm_gtdb[, c("Species", "Assembler", "Relative Abundance", "SampleName")] %>% 
+  filter(str_trim(Species) != "") %>%
+  aggregate(. ~ Species + Assembler + SampleName, FUN = sum) %>% 
+  add_column(Approach = c("MAGs"))# %>% 
+ # rbind(kmer_species_proportions)
+
+#remainder <- aggregate(. ~ Assembler+SampleName, heatmap_species_proportions[heatmap_species_proportions$`Relative Abundance` <= 1,][, -c(1, 5)], sum) %>%
+#  add_column(Species=c("<1% Species")) %>%
+#  add_column(Approach = c("NA"))
+
+#heatmap_species_proportions <- heatmap_species_proportions %>%
+#  filter(`Relative Abundance` > c(1))# %>%
+#  rbind(remainder)
+
+species_matrix <- pivot_wider(heatmap_species_proportions, names_from = SampleName, values_from = `Relative Abundance`)
+
+flye_species_matrix <- species_matrix[species_matrix$Assembler == "FLYE", ] %>%
+  filter_at(vars(starts_width("R")), any_vars(.>1))
+mdbg_species_matrix <- species_matrix[species_matrix$Assembler == "METAMDBG", ] %>%
+  filter_at(vars(starts_width("R")), any_vars(.>1))
+
+flye_names <- flye_species_matrix$Species
+flye_species_matrix <- flye_species_matrix[, -c(1, 2, 3)]
+rownames(flye_species_matrix) <- flye_names
+flye_species_matrix[is.na(flye_species_matrix)] <- 0
+flye_species_matrix <- log(flye_species_matrix + 1)
+
+mdbg_names <- mdbg_species_matrix$Species
+mdbg_species_matrix <- mdbg_species_matrix[, -c(1, 2, 3)]
+rownames(mdbg_species_matrix) <- mdbg_names
+mdbg_species_matrix[is.na(mdbg_species_matrix)] <- 0
+mdbg_species_matrix <- log(mdbg_species_matrix + 1)
+
+ggsave("graphs/nfmag/mag_species_heatmaps.png", as.ggplot(pheatmap(as.matrix(flye_species_matrix),
+         cluster_rows = FALSE,# row_clusters.euclid,
+         cluster_cols = FALSE,
+         clustering_distance_cols = "manhattan",
+         labels_row = flye_names,
+         #filename = "graphs/nfmag/flye_species.png",
+         height = 15,
+         border_color = NA,
+         main = "metaFlye"
+         )) + 
+
+as.ggplot(pheatmap(as.matrix(mdbg_species_matrix),
+         cluster_rows = FALSE,# row_clusters.euclid,
+         cluster_cols = FALSE,
+         clustering_distance_cols = "manhattan",
+         labels_row = mdbg_names,
+         #filename = "graphs/nfmag/mdbg_species.png",
+         height = 15,
+         border_color = NA,
+         main = "nanoMDBG"
+         )), units = "px", height = 4500, width = 3800)
 
 ```
 
