@@ -977,6 +977,52 @@ valine_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY-6053", "PW
 
 ```
 
+
+```{r bile_acids_pathways}
+
+bile_acids_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("A")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("A"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-8135", "PWY-6061", "PWY-8254", "PWY-7588", "PWY-7754", "PWY-7465", "PWY-7269", "PWY-7367", "PWY-8255", "PWY-7119", "PWY-7754", "PWY-8134", "PWY-8254", "PWY-8256", "PWY-8255", "PWY-7756", "PWY-7754", "PWY-7755", "PWY-6518")))
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% bile_acids_pathways$Pathway) %>%
+  left_join(bile_acids_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Bile Acids Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/BileAcids/all.png", ., units = "px", width = 2800, height = 1400)
+
+
+```
+
+
+```{r lactate_pathways}
+
+lactate_pathways <- data.frame(Type = c("Synthesis"), Pathway = c("PWY0-1317", "PWY-6713", "PWY-5197", "PWY-5458", "PWY-8318", "PWY-6714", "PWY-7685", "PWY-7465", "PWY-7269", "PWY-7367")) %>%
+  rbind(data.frame(Type = c("Consumption"), Pathway = c("PWY-8377", "PWY-5458", "PWY0-1317"))) %>%
+  rbind(data.frame(Type = c("Both"), Pathway = c("PWY-8086", "P124-PWY", "P122-PWY", "PWY-5481", "PWY-6901", "PWY-7541", "PWY-7119")))
+
+(humann_prodigal_community_with_metadata %>% 
+  filter(Pathway %in% lactate_pathways$Pathway) %>%
+  left_join(lactate_pathways, by = "Pathway", multiple = "last") %>%
+  #aggregate(`Relative Abundance` ~ SampleName, FUN = sum)
+    
+  ggplot(aes(x = `PathwayDescription`, y = `Relative Abundance`, fill = `Type`)) + 
+    geom_bar(stat = "identity") + 
+    facet_wrap(. ~ SampleName) + 
+    coord_flip() + 
+    ggtitle("Pathway Abundance - Lactate Pathways")) %>%
+  
+  ggsave("graphs/humann/specific/lactate.png", ., units = "px", width = 2800, height = 1400)
+
+
+```
+
 ```{r glutamine_synthesis}
 
 # well ok, there's none of these
