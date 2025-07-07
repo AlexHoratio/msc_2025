@@ -16,6 +16,7 @@ library("vegan")
 library("pheatmap")
 library("dendextend")
 library("devtools")
+library("psych")
 
 #devtools::install("C:\\users\\horat\\desktop\\MetaboAnalystR", build = TRUE, build_vignettes = TRUE, build_manual =T)
 library("MetaboAnalystR")
@@ -130,5 +131,13 @@ openchrom_normalized_specbins <- openchrom_normalized %>%
 
 write_csv(openchrom_normalized_specbins, "data/gcms/specbins.csv")
 
+
+```
+
+```{r corrtest}
+
+# Which peaks are correlated with which other peaks?
+
+gcms_peak_corr <- corr.test(openchrom_normalized)
 
 ```
